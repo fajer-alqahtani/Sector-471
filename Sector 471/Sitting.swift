@@ -1,12 +1,13 @@
 //
-//  MainMenuUI.swift
+//  Sitting.swift
 //  Sector 471
 //
-//  Created by Oroub Alelewi on 09/02/2026.
+//  Created by Rahaf Alhammadi on 22/08/1447 AH.
 //
+
 import SwiftUI
 
-struct MainMenuUI: View {
+struct Sitting: View {
     @State private var starsOpacity: Double = 0.6
     private let minOpacity: Double = 0.35
     private let maxOpacity: Double = 0.85
@@ -46,14 +47,25 @@ struct MainMenuUI: View {
 
                 // Buttons (keep their position)
                 VStack(spacing: 30) {
-                    Button("Start") { }
-                        .font(.custom("PixelifySans-Medium", size: 40))
-                        .foregroundStyle(.white)
+                    Button {
+                        // action
+                    } label: {
+                        HStack(spacing: 100) {
+                            Text("Accessibility")
+                         Image(systemName: "chevron.forward")
+                                .font(.system(size: 24)) // icon size (separate from text if you want)
+                                .imageScale(.large)
+                            
+                        }
+                        .foregroundStyle(.white) // applies to both
+                        
+                    }
+                    .font(.custom("PixelifySans-Medium", size: 40))
                         .buttonStyle(
                             OmbreButtonStyle(
                                 baseFill: hexFillColor,
                                 cornerRadius: 8,
-                                contentInsets: EdgeInsets(top: 20, leading: 180, bottom: 20, trailing: 180),
+                                contentInsets: EdgeInsets(top: 20, leading: 100, bottom: 20, trailing: 20),
                                 starHeight: 50
                             )
                         )
@@ -61,12 +73,12 @@ struct MainMenuUI: View {
                     Button {
                         // action
                     } label: {
-                        HStack(spacing: 10) {
-
-                            Image(systemName: "accessibility")
+                        HStack(spacing: 130) {
+                            Text("Experience")
+                         Image(systemName: "chevron.forward")
                                 .font(.system(size: 24)) // icon size (separate from text if you want)
                                 .imageScale(.large)
-                            Text("Accessibility")
+                            
                         }
                         .foregroundStyle(.white) // applies to both
                         
@@ -75,27 +87,84 @@ struct MainMenuUI: View {
                     .buttonStyle(
                         OmbreButtonStyle(
                             baseFill: hexFillColor,
-                            cornerRadius: 10,
-                            contentInsets: EdgeInsets(top: 20, leading: 100, bottom: 20, trailing: 100),
+                            cornerRadius: 8,
+                            contentInsets: EdgeInsets(top: 20, leading: 100, bottom: 20, trailing: 20),
                             starHeight: 50
                         )
                     )
 
 
-                    Button("Chapters") { }
-                        .font(.custom("PixelifySans-Medium", size: 40))
-                        .foregroundStyle(.white)
-                        .buttonStyle(
-                            OmbreButtonStyle(
-                                baseFill: hexFillColor,
-                                cornerRadius: 8,
-                                contentInsets: EdgeInsets(top: 20, leading: 150, bottom: 20, trailing: 150),
-                                starHeight: 50
-                            )
+                    Button {
+                        // action
+                    } label: {
+                        HStack(spacing: 100) {
+                            Text("Notifications")
+                         Image(systemName: "chevron.forward")
+                                .font(.system(size: 24)) // icon size (separate from text if you want)
+                                .imageScale(.large)
+                            
+                        }
+                        .foregroundStyle(.white) // applies to both
+                        
+                    }
+                    .font(.custom("PixelifySans-Medium", size: 40))
+                    .buttonStyle(
+                        OmbreButtonStyle(
+                            baseFill: hexFillColor,
+                            cornerRadius: 8,
+                            contentInsets: EdgeInsets(top: 20, leading: 100, bottom: 20, trailing: 20),
+                            starHeight: 50
                         )
+                    )
+                    Button {
+                        // action
+                    } label: {
+                        HStack(spacing: 70) {
+                            Text("Support & Info")
+                         Image(systemName: "chevron.forward")
+                                .font(.system(size: 24)) // icon size (separate from text if you want)
+                                .imageScale(.large)
+                            
+                            
+                        }
+                        .foregroundStyle(.white) // applies to both
+                        
+                    }
+                    .font(.custom("PixelifySans-Medium", size: 40))
+                    .buttonStyle(
+                        OmbreButtonStyle(
+                            baseFill: hexFillColor,
+                            cornerRadius: 8,
+                            contentInsets: EdgeInsets(top: 20, leading: 100, bottom: 20, trailing: 20),
+                            starHeight: 50
+                        )
+                    )
+                    Button {
+                        // action
+                    } label: {
+                        HStack(spacing: 90) {
+                            Text("Privacy Policy")
+                            Image(systemName: "link")
+                                .font(.system(size: 24)) // icon size (separate from text if you want)
+                                .imageScale(.large)
+                            
+                        }
+                        .foregroundStyle(.white) // applies to both
+                        
+                    }
+                    .font(.custom("PixelifySans-Medium", size: 40))
+                    .buttonStyle(
+                        OmbreButtonStyle(
+                            baseFill: hexFillColor,
+                            cornerRadius: 8,
+                            contentInsets: EdgeInsets(top: 20, leading: 100, bottom: 20, trailing: 20),
+                            starHeight: 50
+                        )
+                    )
                 }
+                .padding(.top,200)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-
+                
                 VStack(spacing: -8) {
                     Text("Sector")
                     Text("417")
@@ -107,6 +176,7 @@ struct MainMenuUI: View {
                 .offset(y: -h * 0.30)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             }
+            .ignoresSafeArea()
             
         }
         // Pulse Animation
@@ -155,10 +225,7 @@ private struct OmbreButtonStyle: ButtonStyle {
 
                         Spacer(minLength: 0)
 
-                        Image("star")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: starHeight)
+                        
                     }
                     .padding(.horizontal, 14)
                     .opacity(isPressed ? 1 : 0)
@@ -172,5 +239,5 @@ private struct OmbreButtonStyle: ButtonStyle {
 }
 
 #Preview ("Landscape Preview", traits: .landscapeLeft){
-    MainMenuUI()
+    Sitting()
 }

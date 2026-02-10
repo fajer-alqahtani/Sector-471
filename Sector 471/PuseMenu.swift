@@ -1,12 +1,13 @@
 //
-//  MainMenuUI.swift
+//  PuseMenu.swift
 //  Sector 471
 //
-//  Created by Oroub Alelewi on 09/02/2026.
+//  Created by Rahaf Alhammadi on 22/08/1447 AH.
 //
+
 import SwiftUI
 
-struct MainMenuUI: View {
+struct PuseMenu: View {
     @State private var starsOpacity: Double = 0.6
     private let minOpacity: Double = 0.35
     private let maxOpacity: Double = 0.85
@@ -46,41 +47,29 @@ struct MainMenuUI: View {
 
                 // Buttons (keep their position)
                 VStack(spacing: 30) {
-                    Button("Start") { }
+                    Button("Continue") { }
                         .font(.custom("PixelifySans-Medium", size: 40))
                         .foregroundStyle(.white)
                         .buttonStyle(
                             OmbreButtonStyle(
                                 baseFill: hexFillColor,
                                 cornerRadius: 8,
-                                contentInsets: EdgeInsets(top: 20, leading: 180, bottom: 20, trailing: 180),
+                                contentInsets: EdgeInsets(top: 20, leading: 180, bottom: 20, trailing: 140),
                                 starHeight: 50
                             )
                         )
 
-                    Button {
-                        // action
-                    } label: {
-                        HStack(spacing: 10) {
-
-                            Image(systemName: "accessibility")
-                                .font(.system(size: 24)) // icon size (separate from text if you want)
-                                .imageScale(.large)
-                            Text("Accessibility")
-                        }
-                        .foregroundStyle(.white) // applies to both
-                        
-                    }
-                    .font(.custom("PixelifySans-Medium", size: 40)) // text font (and default symbol font if you remove the icon .font)
-                    .buttonStyle(
-                        OmbreButtonStyle(
-                            baseFill: hexFillColor,
-                            cornerRadius: 10,
-                            contentInsets: EdgeInsets(top: 20, leading: 100, bottom: 20, trailing: 100),
-                            starHeight: 50
+                    Button("Settings") { }
+                        .font(.custom("PixelifySans-Medium", size: 40))
+                        .foregroundStyle(.white)
+                        .buttonStyle(
+                            OmbreButtonStyle(
+                                baseFill: hexFillColor,
+                                cornerRadius: 10,
+                                contentInsets: EdgeInsets(top: 20, leading: 180, bottom: 20, trailing: 140),
+                                starHeight: 50
+                            )
                         )
-                    )
-
 
                     Button("Chapters") { }
                         .font(.custom("PixelifySans-Medium", size: 40))
@@ -172,5 +161,5 @@ private struct OmbreButtonStyle: ButtonStyle {
 }
 
 #Preview ("Landscape Preview", traits: .landscapeLeft){
-    MainMenuUI()
+    PuseMenu()
 }
