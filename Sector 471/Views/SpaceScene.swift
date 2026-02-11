@@ -4,14 +4,12 @@
 //
 //  Created by Rahaf Alhammadi on 22/08/1447 AH.
 //
-
 import SwiftUI
 
 struct SpaceScene: View {
-    @State private var earthGrow = false
-    @State private var currentWarningName: String? = nil
+    @EnvironmentObject private var accessibility: AppAccessibilitySettings
+    @StateObject private var vm = SpaceSceneViewModel()
 
-    // ✅ call this when you want to switch to CrashView
     var onFinish: () -> Void = {}
 
     var body: some View {
@@ -20,58 +18,64 @@ struct SpaceScene: View {
             let h = proxy.size.height
 
             ZStack {
-                StarsView()
-
-                Image("Earth")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 250)
-                    .scaleEffect(earthGrow ? 14.25 : 1.0)
-                    .offset(x: 0, y: 190)
-                    .position(x: w / 2, y: h / 2)
-                    .onAppear {
-                        withAnimation(.easeInOut(duration: 40.0)) {
-                            earthGrow = true
-                        }
-                    }
-
-                ShakenFullscreenImage(
-                    name: "Shuttle no background",
-                    active: currentWarningName != nil,
-                    amplitude: 1.2,
-                    rotation: 0.18,
-                    xFreq: 34, yFreq: 41, rFreq: 28
-                )
-
-                if let name = currentWarningName {
-                    ShakenFullscreenBlinkingWarning(
-                        name: name,
-                        amplitude: 6,
-                        rotation: 0.6
+                sceneContent(w: w, h: h)
+                    .blur(radius: CGFloat(vm.impactAmount) * 14)
+                    .scaleEffect(vm.impactAmount > 0 ? (1.0 + CGFloat(vm.impactAmount) * 0.03) : 1.0)
+                    .saturation(1.0 - vm.impactAmount * 0.9)
+                    .contrast(1.0 + vm.impactAmount * 0.35)
+                    .brightness(vm.impactAmount * 0.10)
+                    .overlay(
+                        Color.white
+                            .opacity(vm.impactAmount * 0.75)
+                            .blendMode(.screen)
                     )
-                    .zIndex(999)
-                }
+
+                Color.white
+                    .ignoresSafeArea()
+                    .opacity(vm.whiteOut)
+                    .allowsHitTesting(false)
             }
             .preferredColorScheme(.dark)
-            .task { await runWarningSequence() }
+            .onAppear {
+                vm.onFinish = onFinish
+                vm.start()
+            }
+            .onDisappear { vm.stop() }
         }
     }
 
-    private func runWarningSequence() async {
-        // keep your timing exactly the same
-        try? await Task.sleep(nanoseconds: 10_000_000_000)
+    @ViewBuilder
+    private func sceneContent(w: CGFloat, h: CGFloat) -> some View {
+        ZStack {
+            StarsView()
 
-        await MainActor.run { currentWarningName = "FullWarning" }
-        try? await Task.sleep(nanoseconds: 10_000_000_000)
-        await MainActor.run { currentWarningName = nil }
+            Image("Earth")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 250)
+                .scaleEffect(vm.earthGrow ? 14.25 : 1.0)
+                .offset(x: 0, y: 190)
+                .position(x: w / 2, y: h / 2)
 
-        // ✅ after the warning ends, smoothly move to CrashView
-        await MainActor.run {
-            onFinish()
+            ShakenFullscreenImage(
+                name: "Shuttle no background",
+                active: vm.currentWarningName != nil,
+                amplitude: 1.2,
+                rotation: 0.18,
+                xFreq: 34, yFreq: 41, rFreq: 28
+            )
+
+            if let name = vm.currentWarningName {
+                ShakenFullscreenBlinkingWarning(
+                    name: name,
+                    amplitude: 6,
+                    rotation: 0.6
+                )
+                .zIndex(999)
+            }
         }
     }
 }
-
 
 // MARK: - Fullscreen Shaken Image
 private struct ShakenFullscreenImage: View {
@@ -108,6 +112,7 @@ private struct ShakenFullscreenBlinkingWarning: View {
     let name: String
     var amplitude: CGFloat = 0
     var rotation: Double = 0
+
     @State private var blink = false
 
     var body: some View {
@@ -144,6 +149,7 @@ private struct ShakeWrapper<Content: View>: View {
     var body: some View {
         TimelineView(.animation) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
+
             let x = active ? CGFloat(sin(t * xFreq)) * amplitude : 0
             let y = active ? CGFloat(cos(t * yFreq)) * amplitude : 0
             let r = active ? sin(t * rFreq) * rotation : 0
@@ -153,8 +159,4 @@ private struct ShakeWrapper<Content: View>: View {
                 .offset(x: x, y: y)
         }
     }
-}
-
-#Preview {
-    SpaceScene()
 }

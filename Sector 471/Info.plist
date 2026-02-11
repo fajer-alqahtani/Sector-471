@@ -5,10 +5,9 @@
 	<key>UIAppFonts</key>
 	<array>
 		<string>PixelifySans-Medium.ttf</string>
+		<string>OpenDyslexic-Bold.otf</string>
 	</array>
 	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-	</array>
+	<array/>
 </dict>
 </plist>

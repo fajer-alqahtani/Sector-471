@@ -7,142 +7,92 @@
 import SwiftUI
 
 struct CrashView: View {
-    private let fireflyCount = 35
 
-    @State private var fadeCurrent: String? = nil
-    @State private var fadeNext: String? = nil
-    @State private var nextOpacity: Double = 0.0
-    @State private var showFinalBackground: Bool = false
+    @StateObject private var vm = CrashViewModel()
 
     var body: some View {
         GeometryReader { geo in
+            let s = scale(for: geo.size)
+
             ZStack {
-                Color.black.ignoresSafeArea()
+                sceneLayer(scale: s, size: geo.size)
+                    .opacity(vm.sceneOpacity)
 
-                Image("Forest")
-                    .resizable()
-                    .scaledToFill()
+                Color.white
                     .ignoresSafeArea()
-
-                FirefliesLayer(count: fireflyCount, size: geo.size)
+                    .opacity(vm.whiteStartOpacity)
                     .allowsHitTesting(false)
-
-                Image("Shuttle")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-
-                AlertLastBreathOverlay()
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-
-                if let current = fadeCurrent {
-                    Image(current)
-                        .resizable()
-                        .scaledToFill()
-                        .ignoresSafeArea()
-                        // ✅ .opacity(1.0) removed (no visual change)
-                        .zIndex(900)
-                }
-
-                if let next = fadeNext {
-                    Image(next)
-                        .resizable()
-                        .scaledToFill()
-                        .ignoresSafeArea()
-                        .opacity(nextOpacity)
-                        .zIndex(901)
-                }
-
-                // Final blackout
-                if showFinalBackground {
-                    Image("Background")
-                        .resizable()
-                        .scaledToFill()
-                        .ignoresSafeArea()
-                        .zIndex(999)
-                }
+                    .zIndex(50_000)
             }
-            .task { await runFadeSequenceSmooth() }
+            .onAppear { vm.start() }
+            .onDisappear { vm.stop() }
         }
     }
 
-    private func runFadeSequenceSmooth() async {
-        try? await Task.sleep(nanoseconds: 11_000_000_000)
+    private func scale(for size: CGSize) -> CGFloat {
+        let baseW: CGFloat = 1366
+        let baseH: CGFloat = 1024
+        return min(size.width / baseW, size.height / baseH)
+    }
 
-        let sequence = [
-            "Fade to Black 1",
-            "Fade to Black 2",
-            "Fade to Black 3",
-            "Fade to Black 4"
-        ]
+    @ViewBuilder
+    private func sceneLayer(scale s: CGFloat, size: CGSize) -> some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
 
-        let stepHold: Double = 1.20
-        let forwardCrossfade: Double = 3.95
-        let backwardCrossfade: Double = 4.35
-        let minSettle: Double = 0.10
+            Image("Forest")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
 
-        func fadeLevel(from name: String) -> Int {
-            let digits = name.compactMap { $0.isNumber ? Int(String($0)) : nil }
-            return digits.last ?? 0
-        }
+            FirefliesLayer(count: vm.fireflyCount, size: size, scale: s)
+                .allowsHitTesting(false)
 
-        await MainActor.run {
-            fadeCurrent = sequence.first
-            fadeNext = nil
-            nextOpacity = 0.0
-        }
+            Image("Shuttle")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
 
-        for i in 1..<sequence.count {
-            let nextName = sequence[i]
+            AlertLastBreathOverlay(scale: s)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
 
-            let currentLevel = fadeCurrent.map(fadeLevel) ?? 0
-            let nextLevel = fadeLevel(from: nextName)
-
-            let goingBack = nextLevel < currentLevel
-            let crossfade = goingBack ? backwardCrossfade : forwardCrossfade
-
-            let settle = max(minSettle, stepHold - crossfade)
-
-            await MainActor.run {
-                fadeNext = nextName
-                nextOpacity = 0.0
+            if let current = vm.fadeCurrent {
+                Image(current)
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .zIndex(900)
             }
 
-            await MainActor.run {
-                withAnimation(.easeInOut(duration: crossfade)) {
-                    nextOpacity = 1.0
-                }
+            if let next = vm.fadeNext {
+                Image(next)
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .opacity(vm.nextOpacity)
+                    .zIndex(901)
             }
 
-            try? await Task.sleep(nanoseconds: UInt64(crossfade * 1_000_000_000))
-
-            await MainActor.run {
-                fadeCurrent = nextName
-                fadeNext = nil
-                nextOpacity = 0.0
+            if vm.showFinalBackground {
+                Image("Background")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .zIndex(999)
             }
-
-            if settle > 0 {
-                try? await Task.sleep(nanoseconds: UInt64(settle * 1_000_000_000))
-            }
-        }
-
-        await MainActor.run {
-            fadeCurrent = nil
-            fadeNext = nil
-            nextOpacity = 0.0
-            showFinalBackground = true
         }
     }
 }
 
+// MARK: - Alert overlay
 private struct AlertLastBreathOverlay: View {
+    var scale: CGFloat = 1.0
     @State private var startTime: Date = Date()
 
-    private let glowAmount: Double = 2.25
-    private let glowDistance: CGFloat = 65
-    private let glowSoftness: CGFloat = 68
+    private var glowAmount: Double { 2.25 }
+    private var glowDistance: CGFloat { 65 * scale }
+    private var glowSoftness: CGFloat { 68 * scale }
 
     var body: some View {
         TimelineView(.animation) { timeline in
@@ -234,9 +184,11 @@ private struct AlertLastBreathOverlay: View {
     }
 }
 
+// MARK: - Fireflies
 private struct FirefliesLayer: View {
     let count: Int
     let size: CGSize
+    var scale: CGFloat = 1.0
 
     var body: some View {
         TimelineView(.animation) { timeline in
@@ -251,24 +203,28 @@ private struct FirefliesLayer: View {
 
     private func firefly(i: Int, time t: TimeInterval) -> some View {
         let seed = Double(i) * 97.0
+
         let baseX = stableRand(seed + 1) * size.width
         let baseY = (stableRand(seed + 2) * 0.45 + 0.05) * size.height
 
-        let driftX = sin(t * (0.28 + stableRand(seed + 3) * 0.10) + seed) * (18 + stableRand(seed + 4) * 22)
-        let driftY = cos(t * (0.24 + stableRand(seed + 5) * 0.10) + seed * 0.7) * (10 + stableRand(seed + 6) * 18)
+        let driftX = sin(t * (0.28 + stableRand(seed + 3) * 0.10) + seed)
+            * Double((18 + stableRand(seed + 4) * 22) * scale)
+
+        let driftY = cos(t * (0.24 + stableRand(seed + 5) * 0.10) + seed * 0.7)
+            * Double((10 + stableRand(seed + 6) * 18) * scale)
 
         let flicker = 0.45 + 0.55 * (0.5 + 0.5 * sin(t * (0.9 + stableRand(seed + 7) * 0.8) + seed * 1.3))
 
-        let r = 2.0 + stableRand(seed + 8) * 2.5
-        let glow = 6.0 + stableRand(seed + 9) * 10.0
+        let r = (2.0 + stableRand(seed + 8) * 2.5) * Double(scale)
+        let glow = (6.0 + stableRand(seed + 9) * 10.0) * Double(scale)
 
         return Circle()
             .fill(Color.green.opacity(0.85))
             .frame(width: r * 2, height: r * 2)
-            .position(x: baseX + driftX, y: baseY + driftY)
+            .position(x: baseX + CGFloat(driftX), y: baseY + CGFloat(driftY))
             .opacity(flicker)
             .shadow(color: .green.opacity(0.9), radius: glow)
-            .blur(radius: 0.2)
+            .blur(radius: 0.2 * scale)
     }
 
     private func stableRand(_ x: Double) -> Double {
@@ -279,5 +235,11 @@ private struct FirefliesLayer: View {
 
 #Preview {
     CrashView()
+        .previewInterfaceOrientation(.landscapeLeft)
 }
 
+#Preview("iPad mini (landscape)") {
+    CrashView()
+        .previewDevice("iPad mini (6th generation)")
+        .previewInterfaceOrientation(.landscapeLeft)
+}
