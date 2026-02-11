@@ -11,6 +11,9 @@ struct SpaceScene: View {
     @State private var earthGrow = false
     @State private var currentWarningName: String? = nil
 
+    // ✅ call this when you want to switch to CrashView
+    var onFinish: () -> Void = {}
+
     var body: some View {
         GeometryReader { proxy in
             let w = proxy.size.width
@@ -55,11 +58,17 @@ struct SpaceScene: View {
     }
 
     private func runWarningSequence() async {
+        // keep your timing exactly the same
         try? await Task.sleep(nanoseconds: 10_000_000_000)
 
         await MainActor.run { currentWarningName = "FullWarning" }
         try? await Task.sleep(nanoseconds: 10_000_000_000)
         await MainActor.run { currentWarningName = nil }
+
+        // ✅ after the warning ends, smoothly move to CrashView
+        await MainActor.run {
+            onFinish()
+        }
     }
 }
 

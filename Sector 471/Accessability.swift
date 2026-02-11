@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct Accessability: View {
+    var onBack: () -> Void   // ✅ NEW
+
     @State private var starsOpacity: Double = 0.6
     private let minOpacity: Double = 0.35
     private let maxOpacity: Double = 0.85
@@ -19,9 +21,7 @@ struct Accessability: View {
         Color(hex: "#241D26") ?? .white
     }
 
-    private func voiceOverRowOffsetY(_ h: CGFloat) -> CGFloat {
-        0
-    }
+    private func voiceOverRowOffsetY(_ h: CGFloat) -> CGFloat { 0 }
 
     var body: some View {
         GeometryReader { proxy in
@@ -29,7 +29,7 @@ struct Accessability: View {
             let h = proxy.size.height
             let starsOffset = h * 0.35
 
-            ZStack {
+            ZStack(alignment: .topLeading) {
                 Image("emptyspace")
                     .resizable()
                     .scaledToFill()
@@ -41,15 +41,27 @@ struct Accessability: View {
                     .resizable()
                     .scaledToFill()
                     .opacity(starsOpacity)
-                    .animation(
-                        .easeInOut(duration: pulseDuration)
-                            .repeatForever(autoreverses: true),
-                        value: starsOpacity
-                    )
+                    .animation(.easeInOut(duration: pulseDuration).repeatForever(autoreverses: true),
+                               value: starsOpacity)
                     .offset(y: starsOffset)
                     .frame(width: w + 2, height: h + 2)
                     .clipped()
                     .ignoresSafeArea()
+
+                // ✅ Back to Sitting
+                Button {
+                    onBack()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .foregroundStyle(.white)
+                        .font(.system(size: 22, weight: .semibold))
+                        .padding(12)
+                        .background(.black.opacity(0.25))
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .padding(.leading, 16)
+                .padding(.top, 12)
+                .zIndex(999)
 
                 VStack(spacing: 30) {
                     Button("Default font") { }
@@ -75,7 +87,6 @@ struct Accessability: View {
                                 starHeight: 50
                             )
                         )
-                    
 
                     OmbreToggleRow(
                         title: "VoiceOver",
@@ -85,13 +96,10 @@ struct Accessability: View {
                         contentInsets: EdgeInsets(top: 18, leading: 20, bottom: 18, trailing: 160),
                         starHeight: 50,
                         toggleTint: (Color(hex: "#B57AD9") ?? .purple),
-                        toggleOffsetX: 140 
+                        toggleOffsetX: 140
                     )
-                    
                     .offset(y: voiceOverRowOffsetY(h))
-                    
                 }
-                
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 VStack(spacing: 10) {
@@ -117,6 +125,7 @@ struct Accessability: View {
     }
 }
 
+
 // MARK: - Toggle row (with toggleOffsetX control)
 private struct OmbreToggleRow: View {
     let title: String
@@ -127,8 +136,6 @@ private struct OmbreToggleRow: View {
     let contentInsets: EdgeInsets
     let starHeight: CGFloat
     let toggleTint: Color
-
-    // ✅ NEW: shift ONLY the toggle
     var toggleOffsetX: CGFloat = 0
 
     @GestureState private var pressed = false
@@ -151,7 +158,7 @@ private struct OmbreToggleRow: View {
                 .labelsHidden()
                 .tint(toggleTint)
                 .scaleEffect(1.05)
-                .offset(x: toggleOffsetX) // ✅ only toggle moves
+                .offset(x: toggleOffsetX)
         }
         .padding(contentInsets)
         .background(
@@ -239,6 +246,7 @@ private struct OmbreButtonStyle: ButtonStyle {
     }
 }
 
-#Preview("Landscape Preview", traits: .landscapeLeft) {
-    Accessability()
+#Preview {
+    Accessability(onBack: {})
 }
+

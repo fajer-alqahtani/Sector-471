@@ -16,6 +16,8 @@ struct Chapters: View {
         Color(hex: "#241D26") ?? .white
     }
 
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         GeometryReader { proxy in
             let w = proxy.size.width
@@ -23,6 +25,9 @@ struct Chapters: View {
             let starsOffset = h * 0.35
 
             ZStack {
+                // ✅ prevents any white safe-area showing
+                Color.black.ignoresSafeArea()
+
                 Image("emptyspace")
                     .resizable()
                     .scaledToFill()
@@ -44,7 +49,6 @@ struct Chapters: View {
                     .clipped()
                     .ignoresSafeArea()
 
-                // Buttons (keep their position)
                 VStack(spacing: 30) {
                     Button("Chapter I: Atmospheric Error") { }
                         .font(.custom("PixelifySans-Medium", size: 40))
@@ -58,49 +62,43 @@ struct Chapters: View {
                             )
                         )
 
-                    Button {
-                        // action
-                    } label: {
+                    Button { } label: {
                         HStack(spacing: 10) {
-
                             Image(systemName: "lock")
-                                .font(.system(size: 24)) // icon size (separate from text if you want)
+                                .font(.system(size: 24))
                                 .imageScale(.large)
                             Text("Chapter II")
                         }
-                        .foregroundStyle(.white) // applies to both
+                        .foregroundStyle(.white)
                     }
                     .font(.custom("PixelifySans-Medium", size: 40))
-                        .buttonStyle(
-                            OmbreButtonStyle(
-                                baseFill: hexFillColor,
-                                cornerRadius: 10,
-                                contentInsets: EdgeInsets(top: 20, leading: 270, bottom: 20, trailing: 270),
-                                starHeight: 50
-                            )
+                    .buttonStyle(
+                        OmbreButtonStyle(
+                            baseFill: hexFillColor,
+                            cornerRadius: 10,
+                            contentInsets: EdgeInsets(top: 20, leading: 270, bottom: 20, trailing: 270),
+                            starHeight: 50
                         )
+                    )
 
-                    Button {
-                        // action
-                    } label: {
+                    Button { } label: {
                         HStack(spacing: 10) {
-
                             Image(systemName: "lock")
-                                .font(.system(size: 24)) // icon size (separate from text if you want)
+                                .font(.system(size: 24))
                                 .imageScale(.large)
                             Text("Chapter III")
                         }
-                        .foregroundStyle(.white) // applies to both
+                        .foregroundStyle(.white)
                     }
                     .font(.custom("PixelifySans-Medium", size: 40))
-                        .buttonStyle(
-                            OmbreButtonStyle(
-                                baseFill: hexFillColor,
-                                cornerRadius: 10,
-                                contentInsets: EdgeInsets(top: 20, leading: 260, bottom: 20, trailing: 270),
-                                starHeight: 50
-                            )
+                    .buttonStyle(
+                        OmbreButtonStyle(
+                            baseFill: hexFillColor,
+                            cornerRadius: 10,
+                            contentInsets: EdgeInsets(top: 20, leading: 260, bottom: 20, trailing: 270),
+                            starHeight: 50
                         )
+                    )
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -115,9 +113,21 @@ struct Chapters: View {
                 .offset(y: -h * 0.30)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             }
-            
         }
-        // Pulse Animation
+        .toolbar {
+            // ✅ Custom back button
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .foregroundStyle(.white)
+                        .font(.system(size: 22, weight: .semibold))
+                }
+            }
+        }
+        // optional: make nav bar background not show white behind
+        .toolbarBackground(.hidden, for: .navigationBar)
         .onAppear {
             starsOpacity = maxOpacity
             DispatchQueue.main.async {

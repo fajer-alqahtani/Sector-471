@@ -8,10 +8,14 @@
 import SwiftUI
 
 struct PuseMenu: View {
+    var onContinue: () -> Void
+
     @State private var starsOpacity: Double = 0.6
     private let minOpacity: Double = 0.35
     private let maxOpacity: Double = 0.85
     private let pulseDuration: Double = 1.5
+
+    @State private var showSitting = false   // ✅ NEW
 
     private var hexFillColor: Color {
         Color(hex: "#241D26") ?? .white
@@ -24,6 +28,8 @@ struct PuseMenu: View {
             let starsOffset = h * 0.35
 
             ZStack {
+                Color.black.opacity(0.001).ignoresSafeArea()
+
                 Image("emptyspace")
                     .resizable()
                     .scaledToFill()
@@ -35,19 +41,15 @@ struct PuseMenu: View {
                     .resizable()
                     .scaledToFill()
                     .opacity(starsOpacity)
-                    .animation(
-                        .easeInOut(duration: pulseDuration)
-                            .repeatForever(autoreverses: true),
-                        value: starsOpacity
-                    )
+                    .animation(.easeInOut(duration: pulseDuration).repeatForever(autoreverses: true),
+                               value: starsOpacity)
                     .offset(y: starsOffset)
                     .frame(width: w + 2, height: h + 2)
                     .clipped()
                     .ignoresSafeArea()
 
-                // Buttons (keep their position)
                 VStack(spacing: 30) {
-                    Button("Continue") { }
+                    Button("Continue") { onContinue() }
                         .font(.custom("PixelifySans-Medium", size: 40))
                         .foregroundStyle(.white)
                         .buttonStyle(
@@ -59,17 +61,21 @@ struct PuseMenu: View {
                             )
                         )
 
-                    Button("Settings") { }
-                        .font(.custom("PixelifySans-Medium", size: 40))
-                        .foregroundStyle(.white)
-                        .buttonStyle(
-                            OmbreButtonStyle(
-                                baseFill: hexFillColor,
-                                cornerRadius: 10,
-                                contentInsets: EdgeInsets(top: 20, leading: 180, bottom: 20, trailing: 140),
-                                starHeight: 50
-                            )
+                    Button("Settings") {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showSitting = true
+                        }
+                    }
+                    .font(.custom("PixelifySans-Medium", size: 40))
+                    .foregroundStyle(.white)
+                    .buttonStyle(
+                        OmbreButtonStyle(
+                            baseFill: hexFillColor,
+                            cornerRadius: 10,
+                            contentInsets: EdgeInsets(top: 20, leading: 180, bottom: 20, trailing: 140),
+                            starHeight: 50
                         )
+                    )
 
                     Button("Chapters") { }
                         .font(.custom("PixelifySans-Medium", size: 40))
@@ -95,10 +101,19 @@ struct PuseMenu: View {
                 .shadow(color: .black.opacity(0.4), radius: 4, x: 0, y: 2)
                 .offset(y: -h * 0.30)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+
+                // ✅ Sitting overlay (back returns to PauseMenu)
+                if showSitting {
+                    Sitting {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showSitting = false
+                        }
+                    }
+                    .transition(.opacity)
+                    .zIndex(10_000)
+                }
             }
-            
         }
-        // Pulse Animation
         .onAppear {
             starsOpacity = maxOpacity
             DispatchQueue.main.async {
@@ -108,6 +123,7 @@ struct PuseMenu: View {
         }
     }
 }
+
 
 private struct OmbreButtonStyle: ButtonStyle {
     let baseFill: Color
@@ -160,6 +176,6 @@ private struct OmbreButtonStyle: ButtonStyle {
     }
 }
 
-#Preview ("Landscape Preview", traits: .landscapeLeft){
-    PuseMenu()
+#Preview {
+    PuseMenu(onContinue: {})
 }
