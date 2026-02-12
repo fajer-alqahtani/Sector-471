@@ -13,6 +13,6 @@ struct ContentView: View {
     }
 }
 
-#Preview {
+#Preview ("Landscape Preview", traits: .landscapeLeft){
     MainMenuUI()
 }

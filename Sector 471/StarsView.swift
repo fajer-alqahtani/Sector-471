@@ -54,7 +54,7 @@ struct StarsView: View {
     }
 }
 
-#Preview {
+#Preview ("Landscape Preview", traits: .landscapeLeft){
     StarsView()
 }
 

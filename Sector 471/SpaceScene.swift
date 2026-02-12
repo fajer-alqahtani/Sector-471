@@ -1,15 +1,17 @@
-//
-//  SpaceScene.swift
-//  Sector 471
-//
-//  Created by Rahaf Alhammadi on 22/08/1447 AH.
-//
+////
+////  SpaceScene.swift
+////  Sector 471
+////
+////  Created by Rahaf Alhammadi on 22/08/1447 AH.
+////
+
 
 import SwiftUI
 
 struct SpaceScene: View {
     @State private var earthGrow = false
     @State private var currentWarningName: String? = nil
+    @State private var selectedChoice: String? = nil
 
     var body: some View {
         GeometryReader { proxy in
@@ -24,10 +26,10 @@ struct SpaceScene: View {
                     .scaledToFit()
                     .frame(width: 250)
                     .scaleEffect(earthGrow ? 14.25 : 1.0)
-                    .offset(x: 0, y: 190)
+                    .offset(y: 190)
                     .position(x: w / 2, y: h / 2)
                     .onAppear {
-                        withAnimation(.easeInOut(duration: 40.0)) {
+                        withAnimation(.easeInOut(duration: 40)) {
                             earthGrow = true
                         }
                     }
@@ -46,7 +48,43 @@ struct SpaceScene: View {
                         amplitude: 6,
                         rotation: 0.6
                     )
-                    .zIndex(999)
+                    .zIndex(900)
+                }
+
+                if currentWarningName == "FullWarning" {
+                    ZStack {
+                        // Center "choose"
+                        Image("choose")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 350)
+                            .offset(y: -200)
+
+                        HStack(spacing: 450) {
+
+                            // LEFT CHOICE
+                            if selectedChoice != "ship" {
+                                ChoiceView(
+                                    diamond: "bluediamond",
+                                    text: "saveyourself"
+                                ) {
+                                    selectedChoice = "self"
+                                }
+                            }
+
+                            // RIGHT CHOICE
+                            if selectedChoice != "self" {
+                                ChoiceView(
+                                    diamond: "reddiamond",
+                                    text: "savetheship"
+                                ) {
+                                    selectedChoice = "ship"
+                                }
+                            }
+                        }
+                    }
+                    .position(x: w / 2, y: h * 0.55)
+                    .zIndex(1000)
                 }
             }
             .preferredColorScheme(.dark)
@@ -56,13 +94,50 @@ struct SpaceScene: View {
 
     private func runWarningSequence() async {
         try? await Task.sleep(nanoseconds: 10_000_000_000)
-
         await MainActor.run { currentWarningName = "FullWarning" }
+
         try? await Task.sleep(nanoseconds: 10_000_000_000)
-        await MainActor.run { currentWarningName = nil }
+        await MainActor.run {
+            currentWarningName = nil
+            selectedChoice = nil
+        }
     }
 }
 
+// MARK: - Choice View (Diamond + Text)
+private struct ChoiceView: View {
+    let diamond: String
+    let text: String
+    let action: () -> Void
+
+    @State private var bounce = false
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 14) {
+                Image(diamond)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 120)
+                    .scaleEffect(bounce ? 1.06 : 1.0)
+                    .onAppear {
+                        withAnimation(
+                            .easeInOut(duration: 0.6)
+                                .repeatForever(autoreverses: true)
+                        ) {
+                            bounce.toggle()
+                        }
+                    }
+
+                Image(text)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 300)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
 
 // MARK: - Fullscreen Shaken Image
 private struct ShakenFullscreenImage: View {
@@ -122,7 +197,7 @@ private struct ShakenFullscreenBlinkingWarning: View {
     }
 }
 
-// MARK: - ShakeWrapper
+// MARK: - Shake Wrapper
 private struct ShakeWrapper<Content: View>: View {
     let active: Bool
     var amplitude: CGFloat = 0
@@ -140,12 +215,12 @@ private struct ShakeWrapper<Content: View>: View {
             let r = active ? sin(t * rFreq) * rotation : 0
 
             content()
-                .rotationEffect(.degrees(r), anchor: .center)
+                .rotationEffect(.degrees(r))
                 .offset(x: x, y: y)
         }
     }
 }
 
-#Preview {
+#Preview("Landscape Preview", traits: .landscapeLeft) {
     SpaceScene()
 }

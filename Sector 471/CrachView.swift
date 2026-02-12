@@ -277,7 +277,7 @@ private struct FirefliesLayer: View {
     }
 }
 
-#Preview {
+#Preview ("Landscape Preview", traits: .landscapeLeft){
     CrashView()
 }
 
