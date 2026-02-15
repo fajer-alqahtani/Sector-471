@@ -25,7 +25,7 @@ struct Sector_471App: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            SpaceScene()
         }
         .modelContainer(sharedModelContainer)
     }

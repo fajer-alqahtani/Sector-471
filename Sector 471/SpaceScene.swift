@@ -5,8 +5,8 @@
 ////  Created by Rahaf Alhammadi on 22/08/1447 AH.
 ////
 
-
 import SwiftUI
+import AVFoundation
 
 struct SpaceScene: View {
     @State private var earthGrow = false
@@ -53,7 +53,6 @@ struct SpaceScene: View {
 
                 if currentWarningName == "FullWarning" {
                     ZStack {
-                        // Center "choose"
                         Image("choose")
                             .resizable()
                             .scaledToFit()
@@ -62,7 +61,6 @@ struct SpaceScene: View {
 
                         HStack(spacing: 450) {
 
-                            // LEFT CHOICE
                             if selectedChoice != "ship" {
                                 ChoiceView(
                                     diamond: "bluediamond",
@@ -72,7 +70,6 @@ struct SpaceScene: View {
                                 }
                             }
 
-                            // RIGHT CHOICE
                             if selectedChoice != "self" {
                                 ChoiceView(
                                     diamond: "reddiamond",
@@ -93,18 +90,29 @@ struct SpaceScene: View {
     }
 
     private func runWarningSequence() async {
-        try? await Task.sleep(nanoseconds: 10_000_000_000)
-        await MainActor.run { currentWarningName = "FullWarning" }
+
+        // 🎵 START SOUND
+        AudioManager.shared.playAudio(named: "sector_audio_1")
 
         try? await Task.sleep(nanoseconds: 10_000_000_000)
+
+        await MainActor.run {
+            currentWarningName = "FullWarning"
+        }
+
+        try? await Task.sleep(nanoseconds: 10_000_000_000)
+
         await MainActor.run {
             currentWarningName = nil
             selectedChoice = nil
         }
+
+        // 🔇 STOP SOUND
+        AudioManager.shared.stopAudio()
     }
 }
 
-// MARK: - Choice View (Diamond + Text)
+// MARK: - Choice View
 private struct ChoiceView: View {
     let diamond: String
     let text: String
@@ -224,3 +232,4 @@ private struct ShakeWrapper<Content: View>: View {
 #Preview("Landscape Preview", traits: .landscapeLeft) {
     SpaceScene()
 }
+
