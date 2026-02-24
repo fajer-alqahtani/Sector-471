@@ -1,0 +1,11 @@
+
+{
+  "universal": {
+    "quoteText": "The universe is not obligated to make sense to anyone"
+  },
+  "earth": {
+    "dialogueText": "Mission log: Entry 417.",
+    "topLeftText": "I am entering an orbit around a planet called Earth. A small planet, with loud signals, and chaotic energy.",
+    "thirdText": "humans call this planet home,A curious term"
+  }
+}
