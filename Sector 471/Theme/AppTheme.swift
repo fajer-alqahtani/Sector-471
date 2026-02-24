@@ -44,7 +44,9 @@ enum AppFonts {
 /// Typography helper that builds SwiftUI Fonts based on the selected accessibility settings.
 struct AppTypography {
 
-    /// Returns the correct font name for the currently selected style.
+    // Cache to avoid recalculating a lot
+    private static var scaleCache: [String: CGFloat] = [:]
+
     static func fontName(for style: AppFontStyle) -> String {
         switch style {
         case .pixel: return AppFonts.pixel
@@ -52,34 +54,71 @@ struct AppTypography {
         }
     }
 
-    /// Returns a fixed-size custom font (good for game UI where sizes are controlled manually).
-    /// Applies a small scale adjustment when dyslexic font is active to avoid oversized layouts.
+    /// Computes a "visual" scale so the target font looks the same size as the reference font.
+    /// We use capHeight (or xHeight) which tends to match perceived size better than pointSize.
+    private static func calibratedScale(
+        referenceFontName: String,
+        targetFontName: String,
+        basePointSize: CGFloat
+    ) -> CGFloat {
+        let key = "\(referenceFontName)|\(targetFontName)|\(basePointSize)"
+        if let cached = scaleCache[key] { return cached }
+
+        guard
+            let ref = UIFont(name: referenceFontName, size: basePointSize),
+            let target = UIFont(name: targetFontName, size: basePointSize)
+        else {
+            return 1.0
+        }
+
+        // Use capHeight as the main signal (you can switch to xHeight if it feels better)
+        let refMetric = ref.capHeight
+        let targetMetric = target.capHeight
+
+        guard targetMetric > 0 else { return 1.0 }
+
+        var scale = refMetric / targetMetric
+
+        // Clamp to avoid weird extremes if fonts are missing/mis-registered
+        scale = min(max(scale, 0.80), 1.05)
+
+        scaleCache[key] = scale
+        return scale
+    }
+
+    /// Returns a fixed-size custom font (manual sizing for game UI).
     static func fixed(_ size: CGFloat, settings: AppAccessibilitySettings) -> Font {
         let name = fontName(for: settings.fontStyle)
-        let scale: CGFloat = (settings.fontStyle == .dyslexic) ? settings.dyslexicScale : 1.0
-        return .custom(name, size: size * scale)
+
+        if settings.fontStyle == .dyslexic {
+            let s = calibratedScale(
+                referenceFontName: AppFonts.pixel,
+                targetFontName: AppFonts.dyslexic,
+                basePointSize: size
+            )
+            return .custom(name, size: size * s)
+        } else {
+            return .custom(name, size: size)
+        }
     }
 
-    /// Returns a Dynamic Type-aware font.
-    /// - Uses the system preferred point size for the given text style
-    /// - Then applies the selected custom font
-    /// - Still respects Dynamic Type scaling via `relativeTo:`
-    /// - Applies dyslexic scale tweak to keep the UI from growing too much
+    /// Returns a Dynamic Type-aware font (still uses calibration to keep layouts stable).
     static func dynamic(_ textStyle: Font.TextStyle, settings: AppAccessibilitySettings) -> Font {
         let name = fontName(for: settings.fontStyle)
-
-        // Convert SwiftUI text style -> UIKit text style so we can read the user's preferred size.
         let base = UIFont.preferredFont(forTextStyle: uiTextStyle(from: textStyle)).pointSize
 
-        // Slight downscale for dyslexic font to maintain visual balance.
-        let scale: CGFloat = (settings.fontStyle == .dyslexic) ? settings.dyslexicScale : 1.0
-
-        // `relativeTo` keeps Dynamic Type scaling behavior while still using our custom font.
-        return .custom(name, size: base * scale, relativeTo: textStyle)
+        if settings.fontStyle == .dyslexic {
+            let s = calibratedScale(
+                referenceFontName: AppFonts.pixel,
+                targetFontName: AppFonts.dyslexic,
+                basePointSize: base
+            )
+            return .custom(name, size: base * s, relativeTo: textStyle)
+        } else {
+            return .custom(name, size: base, relativeTo: textStyle)
+        }
     }
 
-    /// Helper that maps SwiftUI Font.TextStyle values to their UIKit equivalents.
-    /// This is needed because preferredFont(forTextStyle:) is a UIKit API.
     private static func uiTextStyle(from style: Font.TextStyle) -> UIFont.TextStyle {
         switch style {
         case .largeTitle: return .largeTitle
@@ -93,7 +132,7 @@ struct AppTypography {
         case .footnote: return .footnote
         case .caption: return .caption1
         case .caption2: return .caption2
-        @unknown default: return .body // fallback if Apple adds new cases in the future
+        @unknown default: return .body
         }
     }
 }

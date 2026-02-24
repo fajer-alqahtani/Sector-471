@@ -28,7 +28,7 @@ struct AccessibilityView: View {
 
     // Global accessibility settings passed in from the parent (environment object in AccessibilityScreen).
     // We keep it as a stored property so we can pass it into font helpers and components.
-    private let accessibility: AppAccessibilitySettings
+    @ObservedObject private var accessibility: AppAccessibilitySettings
 
     // Optional custom back action (used when this view is shown outside normal navigation).
     var onBack: (() -> Void)? = nil
@@ -95,11 +95,13 @@ struct AccessibilityView: View {
                         contentInsets: EdgeInsets(top: 18, leading: 20, bottom: 18, trailing: 160),
                         starHeight: 50,
                         toggleTint: vm.toggleTint,
-                        toggleOffsetX: 140,     // fine-tune toggle alignment without moving text/icon
-                        settings: accessibility, // font style source
-                        fontSize: 40
+                        toggleOffsetX: 140,
+                        settings: accessibility,
+                        fontSize: 40,
+                        showsStars: false      // ✅ NEW
                     )
                     // Allows fine-tuning vertical placement from the ViewModel.
+                    .frame(height: 80)
                     .offset(y: vm.voiceOverRowOffsetY(0))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -126,26 +128,20 @@ struct AccessibilityView: View {
     /// - Highlights the currently selected font by drawing a stroke around the button.
     private func fontButton(title: String, style: AppFontStyle, cornerRadius: CGFloat) -> some View {
         Button(title) {
-            // Update global font style setting via ViewModel.
             vm.setFontStyle(style)
         }
         .appFixedFont(40, settings: accessibility)
+        .lineLimit(1)
+        .minimumScaleFactor(0.9)
         .foregroundStyle(.white)
         .buttonStyle(
             OmbreButtonStyle(
                 baseFill: vm.baseFill,
                 cornerRadius: cornerRadius,
                 contentInsets: EdgeInsets(top: 20, leading: 115, bottom: 20, trailing: 115),
-                starHeight: 50
+                starHeight: 50,
+                isSelected: accessibility.fontStyle == style   // ✅ makes stars stay
             )
-        )
-        // Stroke appears only for the active selection.
-        .overlay(
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(
-                    Color.white.opacity(accessibility.fontStyle == style ? 0.9 : 0.0),
-                    lineWidth: 2
-                )
         )
     }
 }

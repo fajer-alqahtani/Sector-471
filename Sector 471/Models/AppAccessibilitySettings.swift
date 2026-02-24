@@ -52,8 +52,4 @@ final class AppAccessibilitySettings: ObservableObject {
             storedVoiceOver = newValue // persist choice
         }
     }
-
-    /// A small scale factor used when Dyslexic font is active (helps fit text nicely in the UI).
-    /// (Used by your custom font modifier / layout logic.)
-    let dyslexicScale: CGFloat = 0.92
 }

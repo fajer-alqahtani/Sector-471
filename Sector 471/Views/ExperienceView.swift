@@ -66,7 +66,7 @@ struct ExperienceView: View {
 
                 // ===== Screen title =====
                 VStack(spacing: -8) {
-                    Text("Experience")
+                    Text("GamePlay")
                 }
                 .appFixedFont(85, settings: accessibility)
                 .foregroundStyle(.white)

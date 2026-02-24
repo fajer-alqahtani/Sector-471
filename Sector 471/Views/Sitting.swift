@@ -13,12 +13,16 @@
 //
 //  Behavior:
 //  - A custom back button (top-left) triggers `onBack()` to close this settings overlay.
-//  - The menu shows multiple rows (Accessibility, Experience, Notifications, Support & Info, Privacy Policy).
+//  - The menu shows multiple rows (Accessibility, GamePlay, Support & Info, Privacy Policy).
 //  - Only "Accessibility" currently opens a real sub-screen:
 //      * It toggles `showAccessibility` to present AccessibilityScreen as a full overlay.
 //      * AccessibilityScreen provides its own back behavior via an onBack closure
 //        that hides the overlay with a fade animation.
-//  - Other rows are placeholders (empty actions for now).
+//
+//  UPDATE (font consistency):
+//  - Menu rows now have a fixed height + maxWidth so they don’t grow/shrink when switching fonts.
+//  - Row layout uses Spacer() instead of manual spacing so the trailing icon stays aligned.
+//  - Text is constrained to one line with a minimumScaleFactor to prevent layout jumps.
 //
 
 import SwiftUI
@@ -44,6 +48,10 @@ struct Sitting: View {
 
     // Base fill color used for Ombre buttons (fallback to white if hex fails).
     private var hexFillColor: Color { Color(hex: "#241D26") ?? .white }
+
+    // ✅ Locks menu row size across fonts (Pixel/OpenDyslexic)
+    private let rowHeight: CGFloat = 82
+    private let rowMaxWidth: CGFloat = 560
 
     var body: some View {
         GeometryReader { proxy in
@@ -81,35 +89,45 @@ struct Sitting: View {
                             showAccessibility = true
                         }
                     } label: {
-                        row(title: "Accessibility", spacing: 100, icon: "chevron.forward")
+                        row(title: "Accessibility", icon: "chevron.forward")
                     }
                     .appFixedFont(40, settings: accessibility)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                     .buttonStyle(menuRowStyle)
+                    .frame(maxWidth: rowMaxWidth)
+                    .frame(height: rowHeight)
 
                     // Placeholder rows (future: open real screens).
                     Button { } label: {
-                        row(title: "Experience", spacing: 130, icon: "chevron.forward")
+                        row(title: "GamePlay", icon: "chevron.forward")
                     }
                     .appFixedFont(40, settings: accessibility)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                     .buttonStyle(menuRowStyle)
+                    .frame(maxWidth: rowMaxWidth)
+                    .frame(height: rowHeight)
 
                     Button { } label: {
-                        row(title: "Notifications", spacing: 100, icon: "chevron.forward")
+                        row(title: "Support & Info", icon: "chevron.forward")
                     }
                     .appFixedFont(40, settings: accessibility)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                     .buttonStyle(menuRowStyle)
+                    .frame(maxWidth: rowMaxWidth)
+                    .frame(height: rowHeight)
 
                     Button { } label: {
-                        row(title: "Support & Info", spacing: 70, icon: "chevron.forward")
+                        row(title: "Privacy Policy", icon: "link")
                     }
                     .appFixedFont(40, settings: accessibility)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                     .buttonStyle(menuRowStyle)
-
-                    Button { } label: {
-                        row(title: "Privacy Policy", spacing: 90, icon: "link")
-                    }
-                    .appFixedFont(40, settings: accessibility)
-                    .buttonStyle(menuRowStyle)
+                    .frame(maxWidth: rowMaxWidth)
+                    .frame(height: rowHeight)
                 }
                 .padding(.top, 200) // pushes the menu below the title area
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -145,10 +163,11 @@ struct Sitting: View {
     }
 
     /// Builds the row content (text + trailing icon) for each settings item.
-    /// `spacing` is used to manually align the trailing icons per row.
-    private func row(title: String, spacing: CGFloat, icon: String) -> some View {
-        HStack(spacing: spacing) {
+    /// Uses Spacer so the trailing icon is always aligned consistently (no manual spacing needed).
+    private func row(title: String, icon: String) -> some View {
+        HStack(spacing: 12) {
             Text(title)
+            Spacer(minLength: 0)
             Image(systemName: icon)
                 .font(.system(size: 24))
                 .imageScale(.large)
@@ -161,7 +180,7 @@ struct Sitting: View {
         OmbreButtonStyle(
             baseFill: hexFillColor,
             cornerRadius: 8,
-            contentInsets: EdgeInsets(top: 20, leading: 100, bottom: 20, trailing: 20),
+            contentInsets: EdgeInsets(top: 20, leading: 24, bottom: 20, trailing: 24),
             starHeight: 50
         )
     }

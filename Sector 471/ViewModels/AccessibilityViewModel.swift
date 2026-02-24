@@ -25,7 +25,7 @@ final class AccessibilityViewModel: ObservableObject {
     let stars: StarsPulseViewModel
 
     // Reference to the shared/global accessibility settings stored in AppAccessibilitySettings.
-    private let accessibility: AppAccessibilitySettings
+    @ObservedObject private var accessibility: AppAccessibilitySettings
 
     // Holds Combine subscriptions to keep them alive for the lifetime of this ViewModel.
     private var cancellables = Set<AnyCancellable>()
@@ -40,13 +40,12 @@ final class AccessibilityViewModel: ObservableObject {
         self.accessibility = accessibility
         self.stars = StarsPulseViewModel()
 
-        // StarsPulseViewModel is its own ObservableObject.
-        // We forward its objectWillChange into this ViewModel so the UI updates smoothly
-        // when the star opacity changes.
         stars.objectWillChange
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+
+        accessibility.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
     }
 
