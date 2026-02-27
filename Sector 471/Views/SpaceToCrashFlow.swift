@@ -30,46 +30,38 @@ import SwiftUI
 
 struct EarthSpaceCrashFlow: View {
 
-    // ViewModel that controls which scene is active and manages crossfade timing.
+    @EnvironmentObject private var pause: PauseController        // ✅ ADD
     @StateObject private var vm = FlowViewModel()
 
     var body: some View {
         ZStack {
 
-            // ===== Universal Scene =====
-            // Render if it's the active step OR if opacity is still fading out.
             if vm.step == .universal || vm.universalOpacity > 0.001 {
                 UniversalScene()
                     .opacity(vm.universalOpacity)
                     .zIndex(0)
             }
 
-            // ===== Earth Scene =====
             if vm.step == .earth || vm.earthOpacity > 0.001 {
                 EarthScene()
                     .opacity(vm.earthOpacity)
                     .zIndex(1)
             }
 
-            // ===== Space Scene =====
-            // When Space finishes, it triggers vm.startCrashTransition() to move to Crash.
             if vm.step == .space || vm.spaceOpacity > 0.001 {
                 SpaceScene(onFinish: vm.startCrashTransition)
                     .opacity(vm.spaceOpacity)
                     .zIndex(2)
             }
 
-            // ===== Crash Scene =====
             if vm.step == .crash || vm.crashOpacity > 0.001 {
                 CrashView()
                     .opacity(vm.crashOpacity)
                     .zIndex(3)
             }
 
-            // ===== Pause button overlay =====
-            // Always visible on top-left (positioned using large leading padding for your layout).
             Button {
-                vm.pause()
+                vm.pause()                                   // ✅ now pauses time too
             } label: {
                 Image(systemName: "pause.fill")
                     .font(.system(size: 32, weight: .semibold))
@@ -80,32 +72,30 @@ struct EarthSpaceCrashFlow: View {
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            // Manual positioning (tuned for your base layout).
             .padding(.leading, 1306)
             .padding(.top, 12)
             .zIndex(10_000)
 
-            // ===== Pause menu overlay =====
-            // Shown only when vm.isPaused is true.
             if vm.isPaused {
                 PuseMenu(onContinue: { vm.resume() })
                     .transition(.opacity)
                     .zIndex(20_000)
             }
         }
-
-        // Keep interactions enabled for this container.
         .allowsHitTesting(true)
-
-        // Start and stop the FlowViewModel task with the lifecycle of this view.
-        .onAppear { vm.start() }
+        .onAppear {
+            vm.configure(pause: pause)                      // ✅ ADD
+            vm.start()
+        }
         .onDisappear { vm.stop() }
     }
 }
 
-// MARK: - Preview
 #Preview {
     NavigationStack {
         EarthSpaceCrashFlow()
+            .environmentObject(PauseController())           // ✅ ADD
+            .environmentObject(AppAccessibilitySettings())   // likely needed in children
+            .environmentObject(ScriptStore.shared)           // UniversalScene needs it
     }
 }

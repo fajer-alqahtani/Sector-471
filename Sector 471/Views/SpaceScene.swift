@@ -224,12 +224,20 @@ import SwiftUI
 struct SpaceScene: View {
 
     @EnvironmentObject private var accessibility: AppAccessibilitySettings
+    @EnvironmentObject private var pause: PauseController
     @StateObject private var vm = SpaceSceneViewModel()
 
     var onFinish: () -> Void = {}
 
-    // MARK: - Choice State
     @State private var selectedChoice: Int? = nil
+
+    @State private var autoPickTask: Task<Void, Never>? = nil
+
+    // ✅ controls whether the choices overlay is visible
+    @State private var showChoices: Bool = false
+
+    // ✅ hides overlay 1.5s after selection
+    @State private var hideAfterSelectTask: Task<Void, Never>? = nil
 
     var body: some View {
         GeometryReader { proxy in
@@ -238,7 +246,6 @@ struct SpaceScene: View {
 
             ZStack {
 
-                // ===== Main scene content =====
                 sceneContent(w: w, h: h)
                     .blur(radius: CGFloat(vm.impactAmount) * 14)
                     .scaleEffect(vm.impactAmount > 0 ? (1.0 + CGFloat(vm.impactAmount) * 0.03) : 1.0)
@@ -251,13 +258,16 @@ struct SpaceScene: View {
                             .blendMode(.screen)
                     )
 
-                // ===== Diamond Choices Overlay =====
-                if selectedChoice == nil {
+                // ✅ Diamond Choices Overlay:
+                // - appears when warning starts
+                // - stays during selection animation
+                // - disappears 1.5s after selection
+                if showChoices {
                     DiamondChoicesView(selectedChoice: $selectedChoice)
                         .zIndex(1000)
+                        .transition(.opacity)
                 }
 
-                // ===== Final white flash =====
                 Color.white
                     .ignoresSafeArea()
                     .opacity(vm.whiteOut)
@@ -266,9 +276,61 @@ struct SpaceScene: View {
             .preferredColorScheme(.dark)
             .onAppear {
                 vm.onFinish = onFinish
+                vm.configure(pause: pause)
                 vm.start()
             }
+
+            // ✅ When warning appears: show choices and start auto-pick timer
+            .onChange(of: vm.currentWarningName) { _, newValue in
+                autoPickTask?.cancel()
+                autoPickTask = nil
+
+                // show overlay only when warning begins
+                if newValue != nil {
+                    showChoices = true
+
+                    autoPickTask = Task {
+                        // warning duration = 10s, auto-pick 2s before end => 8s
+                        await pause.sleep(seconds: 8.0)
+                        if Task.isCancelled { return }
+
+                        await MainActor.run {
+                            if selectedChoice == nil {
+                                withAnimation(.easeInOut(duration: 0.45)) {
+                                    selectedChoice = 0
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ✅ When selection happens (user OR auto): hide after 1.5s
+            .onChange(of: selectedChoice) { _, newValue in
+                hideAfterSelectTask?.cancel()
+                hideAfterSelectTask = nil
+
+                guard newValue != nil else { return }
+
+                hideAfterSelectTask = Task {
+                    await pause.sleep(seconds: 1.5)
+                    if Task.isCancelled { return }
+
+                    await MainActor.run {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            showChoices = false
+                        }
+                    }
+                }
+            }
+
             .onDisappear {
+                autoPickTask?.cancel()
+                autoPickTask = nil
+
+                hideAfterSelectTask?.cancel()
+                hideAfterSelectTask = nil
+
                 vm.stop()
             }
         }
@@ -277,7 +339,6 @@ struct SpaceScene: View {
     @ViewBuilder
     private func sceneContent(w: CGFloat, h: CGFloat) -> some View {
         ZStack {
-
             StarsView()
 
             Image("Earth")
@@ -308,84 +369,82 @@ struct SpaceScene: View {
     }
 }
 
-// MARK: - Diamond Choices View
 
+// MARK: - Diamond Choices View (moves selected to center, other disappears)
 private struct DiamondChoicesView: View {
 
     @Binding var selectedChoice: Int?
+    @Namespace private var ns
 
     var body: some View {
         VStack {
             Spacer()
+
             Image("choose")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 300)
-                                .opacity(selectedChoice == nil ? 1 : 0)
-                                .offset(y: -120)
-                                .animation(.easeInOut(duration: 0.3), value: selectedChoice)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 300)
+                .opacity(selectedChoice == nil ? 1 : 0)
+                .offset(y: -120)
+                .animation(.easeInOut(duration: 0.3), value: selectedChoice)
 
+            ZStack {
+                // BEFORE: both options in your original positions
+                if selectedChoice == nil {
+                    HStack(spacing: 250) {
+                        choiceButton(id: 0, diamondImage: "reddiamond",  underImage: "savetheship")
+                        choiceButton(id: 1, diamondImage: "bluediamond", underImage: "saveyourself")
+                    }
+                    .padding(.bottom, 200)
+                }
 
-            HStack(spacing: 250) {
-
-                diamondButton(
-                    id: 0,
-                    diamondImage: "reddiamond",
-                    underImage: "savetheship"
-                )
-
-                diamondButton(
-                    id: 1,
-                    diamondImage: "bluediamond",
-                    underImage: "saveyourself"
-                )
+                // AFTER: selected moves to center and stays there
+                if let selected = selectedChoice {
+                    selectedCentered(id: selected)
+                        .padding(.bottom, 200)
+                }
             }
-            .padding(.bottom, 200)
+            .animation(.easeInOut(duration: 0.45), value: selectedChoice)
         }
-        .animation(.easeInOut(duration: 0.25), value: selectedChoice)
     }
 
-    private func diamondButton(id: Int, diamondImage: String, underImage: String) -> some View {
+    private func choiceButton(id: Int, diamondImage: String, underImage: String) -> some View {
         Button {
-            if selectedChoice == nil {
+            guard selectedChoice == nil else { return }
+            withAnimation(.easeInOut(duration: 0.45)) {
                 selectedChoice = id
             }
         } label: {
-            VStack(spacing: 12) {
-
-                Image(diamondImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 180, height: 180)
-                    .shadow(radius: 8)
-
-                Image(underImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 280)
-            }
+            diamondStack(diamondImage: diamondImage, underImage: underImage)
+                .matchedGeometryEffect(id: "choice-\(id)", in: ns)
         }
         .buttonStyle(.plain)
-        .disabled(selectedChoice != nil)
-        .opacity(opacity(for: id))
-        .scaleEffect(scale(for: id))
     }
 
-    private func opacity(for id: Int) -> Double {
-        if let selectedChoice {
-            return selectedChoice == id ? 1.0 : 0.35
-        }
-        return 1.0
+    private func selectedCentered(id: Int) -> some View {
+        let diamondImage = (id == 0) ? "reddiamond" : "bluediamond"
+        let underImage   = (id == 0) ? "savetheship" : "saveyourself"
+
+        return diamondStack(diamondImage: diamondImage, underImage: underImage)
+            .matchedGeometryEffect(id: "choice-\(id)", in: ns)
+            .frame(maxWidth: .infinity)
     }
 
-    private func scale(for id: Int) -> CGFloat {
-        if let selectedChoice {
-            return selectedChoice == id ? 1.05 : 1.0
+    private func diamondStack(diamondImage: String, underImage: String) -> some View {
+        VStack(spacing: 12) {
+            Image(diamondImage)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 180, height: 180)
+                .shadow(radius: 8)
+
+            Image(underImage)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 280)
         }
-        return 1.0
     }
 }
-
 // MARK: - ShakeWrapper + Supporting Views
 
 private struct ShakenFullscreenImage: View {
@@ -471,4 +530,5 @@ private struct ShakeWrapper<Content: View>: View {
 #Preview("SpaceScene - Landscape", traits: .landscapeLeft) {
     SpaceScene()
         .environmentObject(AppAccessibilitySettings())
+        .environmentObject(PauseController())   // ✅ add this
 }

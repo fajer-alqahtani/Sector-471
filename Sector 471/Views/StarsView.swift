@@ -30,43 +30,33 @@ import SwiftUI
 
 struct StarsView: View {
 
-    /// Name of the currently visible "Lines" overlay image.
-    /// nil means no overlay is currently shown.
+    @EnvironmentObject private var pause: PauseController   // ✅ ADD
     @State private var currentLinesName: String? = nil
 
     var body: some View {
         ZStack {
-
-            // Base background color behind images.
             Color.black.ignoresSafeArea()
 
-            // Static stars image layer.
             Image("Stars")
                 .resizable()
                 .scaledToFill()
 
-            // Overlay: show only ONE "Lines" asset at a time.
             if let name = currentLinesName {
                 Image(name)
                     .resizable()
                     .scaledToFill()
             }
         }
-        // Start the async overlay sequence when the view appears.
         .task { await runLinesSequence() }
     }
 
-    /// Plays the Lines1–Lines9 overlay sequence once.
-    /// Each step is (imageName, durationSeconds).
     private func runLinesSequence() async {
 
-        // Timing constants (seconds).
-        let shortTime: Double = 2.5   // Lines1–5
-        let longTime: Double  = 3.5   // Lines6–7
-        let extraTime: Double = 4.5   // Lines8
-        let stay: Double      = 10.5  // Lines9 (final hold)
+        let shortTime: Double = 2.5
+        let longTime: Double  = 3.5
+        let extraTime: Double = 4.5
+        let stay: Double      = 10.5
 
-        // Ordered steps: overlay name + how long it should stay visible.
         let steps: [(String, Double)] = [
             ("Lines1", shortTime),
             ("Lines2", shortTime),
@@ -79,23 +69,21 @@ struct StarsView: View {
             ("Lines9", stay)
         ]
 
-        // Run the sequence once (no looping).
-        for step in steps {
-            let (name, duration) = step
+        for (name, duration) in steps {
+            if Task.isCancelled { return }
 
-            // Show the overlay image.
             await MainActor.run { currentLinesName = name }
 
-            // Keep it visible for the requested duration.
-            try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+            // ✅ pause-aware wait
+            await pause.sleep(seconds: duration)
+            if Task.isCancelled { return }
 
-            // Hide the overlay image.
             await MainActor.run { currentLinesName = nil }
         }
     }
 }
 
-// MARK: - Preview
 #Preview("Landscape Preview", traits: .landscapeLeft) {
     StarsView()
+        .environmentObject(PauseController())               // ✅ ADD
 }

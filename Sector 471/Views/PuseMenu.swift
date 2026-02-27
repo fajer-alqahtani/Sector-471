@@ -25,13 +25,11 @@ import SwiftUI
 
 struct PuseMenu: View {
 
-    // Callback from the parent flow to close this menu and resume the scene.
     var onContinue: () -> Void
 
-    // Global accessibility settings (controls font style: pixel vs dyslexic).
     @EnvironmentObject private var accessibility: AppAccessibilitySettings
+    @EnvironmentObject private var pause: PauseController   // ✅ ADD
 
-    // Star pulsing state used by StarsBackdrop (opacity changes over time).
     @StateObject private var stars = StarsPulseViewModel(
         initialOpacity: 0.6,
         minOpacity: 0.35,
@@ -39,21 +37,17 @@ struct PuseMenu: View {
         pulseDuration: 1.5
     )
 
-    // Controls whether the Settings overlay (Sitting view) is visible.
     @State private var showSitting = false
 
-    // Base fill color used for Ombre buttons (fallback to white if hex fails).
     private var hexFillColor: Color { Color(hex: "#241D26") ?? .white }
 
     var body: some View {
         GeometryReader { proxy in
-            let h = proxy.size.height // used to position the title vertically
+            let h = proxy.size.height
 
             ZStack {
-                // Transparent tap layer (keeps view full-screen without adding a visible background).
                 Color.black.opacity(0.001).ignoresSafeArea()
 
-                // ===== Background stars =====
                 StarsBackdrop(
                     size: proxy.size,
                     starsOpacity: $stars.opacity,
@@ -61,16 +55,17 @@ struct PuseMenu: View {
                     pulseDuration: stars.pulseDuration
                 )
 
-                // ===== Menu buttons =====
                 VStack(spacing: 30) {
 
-                    // Continue: resumes gameplay/flow by calling the parent callback.
-                    Button("Continue") { onContinue() }
-                        .appFixedFont(40, settings: accessibility)
-                        .foregroundStyle(.white)
-                        .buttonStyle(buttonStyle(cornerRadius: 8))
+                    // ✅ Continue must resume pause controller
+                    Button("Continue") {
+                        pause.resume()
+                        onContinue()
+                    }
+                    .appFixedFont(40, settings: accessibility)
+                    .foregroundStyle(.white)
+                    .buttonStyle(buttonStyle(cornerRadius: 8))
 
-                    // Settings: shows the Sitting overlay.
                     Button("Settings") {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             showSitting = true
@@ -80,7 +75,6 @@ struct PuseMenu: View {
                     .foregroundStyle(.white)
                     .buttonStyle(buttonStyle(cornerRadius: 10))
 
-                    // Chapters: placeholder for future chapter screen navigation.
                     Button("Chapters") { }
                         .appFixedFont(40, settings: accessibility)
                         .foregroundStyle(.white)
@@ -95,7 +89,6 @@ struct PuseMenu: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                // ===== Title branding =====
                 VStack(spacing: -8) {
                     Text("Sector")
                     Text("417")
@@ -107,25 +100,23 @@ struct PuseMenu: View {
                 .offset(y: -h * 0.30)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
-                // ===== Settings overlay =====
-                // Shown on top of the pause menu when showSitting is true.
                 if showSitting {
                     Sitting {
-                        // Close settings overlay.
                         withAnimation(.easeInOut(duration: 0.2)) {
                             showSitting = false
                         }
                     }
                     .transition(.opacity)
-                    .zIndex(10_000) // ensure it appears above everything
+                    .zIndex(10_000)
                 }
             }
         }
-        // Start the stars pulsing when pause menu appears.
-        .onAppear { stars.startPulse() }
+        .onAppear {
+            stars.startPulse()
+            pause.pause() // ✅ keep the game paused while menu is open
+        }
     }
 
-    /// Centralized Ombre button style for the first two buttons to keep sizing consistent.
     private func buttonStyle(cornerRadius: CGFloat) -> OmbreButtonStyle {
         OmbreButtonStyle(
             baseFill: hexFillColor,

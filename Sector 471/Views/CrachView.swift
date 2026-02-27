@@ -28,69 +28,59 @@ import SwiftUI
 
 struct CrashView: View {
 
-    // ViewModel that drives the crash timeline and exposes published state for the UI.
+    @EnvironmentObject private var pause: PauseController   // ✅ ADD
     @StateObject private var vm = CrashViewModel()
 
     var body: some View {
         GeometryReader { geo in
-            let s = scale(for: geo.size) // scale factor to keep effects consistent across devices
+            let s = scale(for: geo.size)
 
             ZStack {
-                // Main scene visuals (fades in using vm.sceneOpacity).
                 sceneLayer(scale: s, size: geo.size)
                     .opacity(vm.sceneOpacity)
 
-                // White overlay starts fully visible and fades out to reveal the scene.
                 Color.white
                     .ignoresSafeArea()
                     .opacity(vm.whiteStartOpacity)
-                    .allowsHitTesting(false) // overlay should not block touches
-                    .zIndex(50_000) // always above everything
+                    .allowsHitTesting(false)
+                    .zIndex(50_000)
             }
-            // Start the timeline when the view appears.
-            .onAppear { vm.start() }
-            // Stop/cancel the timeline when leaving the view.
+            .onAppear {
+                vm.configure(pause: pause)   // ✅ ADD
+                vm.start()
+            }
             .onDisappear { vm.stop() }
         }
     }
 
-    /// Computes a scale factor using a fixed base reference size.
-    /// This keeps firefly movement, glow sizes, etc. consistent across different devices.
     private func scale(for size: CGSize) -> CGFloat {
         let baseW: CGFloat = 1366
         let baseH: CGFloat = 1024
         return min(size.width / baseW, size.height / baseH)
     }
 
-    /// Renders the full crash scene layers (background + effects + fade overlays).
     @ViewBuilder
     private func sceneLayer(scale s: CGFloat, size: CGSize) -> some View {
         ZStack {
-            // Base background fill behind images.
             Color.black.ignoresSafeArea()
 
-            // Background image layer.
             Image("Forest")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
 
-            // Fireflies visual layer (animated particles).
             FirefliesLayer(count: vm.fireflyCount, size: size, scale: s)
                 .allowsHitTesting(false)
 
-            // Shuttle/cockpit image layer above background.
             Image("Shuttle")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
 
-            // Alert overlay (animated flicker/glow).
             AlertLastBreathOverlay(scale: s)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
 
-            // Current fade overlay image (base layer).
             if let current = vm.fadeCurrent {
                 Image(current)
                     .resizable()
@@ -99,7 +89,6 @@ struct CrashView: View {
                     .zIndex(900)
             }
 
-            // Next fade overlay image (crossfade layer above current).
             if let next = vm.fadeNext {
                 Image(next)
                     .resizable()
@@ -109,7 +98,6 @@ struct CrashView: View {
                     .zIndex(901)
             }
 
-            // Final background after the fade sequence finishes.
             if vm.showFinalBackground {
                 Image("Background")
                     .resizable()
@@ -322,11 +310,13 @@ private struct FirefliesLayer: View {
 // MARK: - Previews
 #Preview("Landscape Preview", traits: .landscapeLeft) {
     CrashView()
+        .environmentObject(PauseController())               // ✅ ADD
         .previewInterfaceOrientation(.landscapeLeft)
 }
 
 #Preview("iPad mini (landscape)") {
     CrashView()
+        .environmentObject(PauseController())               // ✅ ADD
         .previewDevice("iPad mini (6th generation)")
         .previewInterfaceOrientation(.landscapeLeft)
 }
