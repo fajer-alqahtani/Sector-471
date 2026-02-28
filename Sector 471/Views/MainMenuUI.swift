@@ -85,7 +85,7 @@ struct MainMenuUI: View {
                             Button {
                                 path.append(Route.sitting)
                             } label: {
-                                Text("Sitting")
+                                Text("Settings")
                                     .appFixedFont(40, settings: accessibility)
                                     .foregroundStyle(.white)
                                     .lineLimit(1)
