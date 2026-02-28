@@ -45,7 +45,7 @@ final class FlowViewModel: ObservableObject {
 
     private var sequenceTask: Task<Void, Never>?
 
-    // ✅ Pause dependency
+   
     private var pauseController: PauseController?
 
     func configure(pause: PauseController) {
@@ -88,7 +88,7 @@ final class FlowViewModel: ObservableObject {
         resetToStart()
         guard let pause = pauseController else { return }
 
-        // ✅ pause-aware wait
+        
         await pause.sleep(seconds: universalToEarthSeconds)
         if Task.isCancelled { return }
 
@@ -100,7 +100,7 @@ final class FlowViewModel: ObservableObject {
 
         let earthToSpaceDelay = earthHoldSeconds + earthFadeToBlackDuration + spaceStartDelayAfterEarthBlack
 
-        // ✅ pause-aware wait
+       
         await pause.sleep(seconds: earthToSpaceDelay)
         if Task.isCancelled { return }
 

@@ -28,7 +28,7 @@ import SwiftUI
 
 struct CrashView: View {
 
-    @EnvironmentObject private var pause: PauseController   // ✅ ADD
+    @EnvironmentObject private var pause: PauseController
     @StateObject private var vm = CrashViewModel()
 
     var body: some View {
@@ -46,7 +46,7 @@ struct CrashView: View {
                     .zIndex(50_000)
             }
             .onAppear {
-                vm.configure(pause: pause)   // ✅ ADD
+                vm.configure(pause: pause)
                 vm.start()
             }
             .onDisappear { vm.stop() }
@@ -305,18 +305,4 @@ private struct FirefliesLayer: View {
         let v = sin(x * 12_989.0 + 78.233) * 43_758.5453
         return v - floor(v)
     }
-}
-
-// MARK: - Previews
-#Preview("Landscape Preview", traits: .landscapeLeft) {
-    CrashView()
-        .environmentObject(PauseController())               // ✅ ADD
-        .previewInterfaceOrientation(.landscapeLeft)
-}
-
-#Preview("iPad mini (landscape)") {
-    CrashView()
-        .environmentObject(PauseController())               // ✅ ADD
-        .previewDevice("iPad mini (6th generation)")
-        .previewInterfaceOrientation(.landscapeLeft)
 }

@@ -30,7 +30,7 @@ import SwiftUI
 
 struct StarsView: View {
 
-    @EnvironmentObject private var pause: PauseController   // ✅ ADD
+    @EnvironmentObject private var pause: PauseController
     @State private var currentLinesName: String? = nil
 
     var body: some View {
@@ -74,7 +74,7 @@ struct StarsView: View {
 
             await MainActor.run { currentLinesName = name }
 
-            // ✅ pause-aware wait
+            
             await pause.sleep(seconds: duration)
             if Task.isCancelled { return }
 
@@ -85,5 +85,5 @@ struct StarsView: View {
 
 #Preview("Landscape Preview", traits: .landscapeLeft) {
     StarsView()
-        .environmentObject(PauseController())               // ✅ ADD
+        .environmentObject(PauseController())               
 }

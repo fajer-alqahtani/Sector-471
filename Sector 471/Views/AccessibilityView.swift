@@ -68,16 +68,16 @@ struct AccessibilityView: View {
                 Button {
                     if let onBack { onBack() } else { dismiss() }
                 } label: {
-                    Image(systemName: "chevron.left")
-                        .foregroundStyle(.white)
-                        .font(.system(size: 22, weight: .semibold))
-                        .padding(12)
-                        .background(.black.opacity(0.25))
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .padding(.leading, 16)
-                .padding(.top, 12)
-                .zIndex(999) // ensure back button stays above everything
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 32, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(20)
+                            .background(.purple.opacity(0.09))
+                            .clipShape(RoundedRectangle(cornerRadius: 162, style: .continuous))
+                    }
+                    .padding(.leading, 26)
+                    .padding(.top, 22)
+                    .zIndex(999)// ensure back button stays above everything
 
                 // ===== Main controls =====
                 VStack(spacing: 30) {
@@ -98,7 +98,7 @@ struct AccessibilityView: View {
                         toggleOffsetX: 140,
                         settings: accessibility,
                         fontSize: 40,
-                        showsStars: false      // ✅ NEW
+                        showsStars: false
                     )
                     // Allows fine-tuning vertical placement from the ViewModel.
                     .frame(height: 80)
@@ -140,7 +140,7 @@ struct AccessibilityView: View {
                 cornerRadius: cornerRadius,
                 contentInsets: EdgeInsets(top: 20, leading: 115, bottom: 20, trailing: 115),
                 starHeight: 50,
-                isSelected: accessibility.fontStyle == style   // ✅ makes stars stay
+                isSelected: accessibility.fontStyle == style   
             )
         )
     }

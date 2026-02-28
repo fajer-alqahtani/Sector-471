@@ -12,14 +12,14 @@ struct Sector_471App: App {
 
     @StateObject private var accessibility = AppAccessibilitySettings()
     @StateObject private var scriptStore = ScriptStore.shared
-    @StateObject private var pause = PauseController()   // ✅ ADD
+    @StateObject private var pause = PauseController()
 
     var body: some Scene {
         WindowGroup {
                 ContentView()
                     .environmentObject(accessibility)
                     .environmentObject(scriptStore)
-                    .environmentObject(pause)           // ✅ ADD
+                    .environmentObject(pause)           
         }
     }
 }

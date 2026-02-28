@@ -26,7 +26,7 @@ import SwiftUI
 struct EarthScene: View {
 
     @EnvironmentObject private var accessibility: AppAccessibilitySettings
-    @EnvironmentObject private var pause: PauseController        // ✅ ADD
+    @EnvironmentObject private var pause: PauseController
     @StateObject private var vm = EarthSceneViewModel(scriptStore: .shared)
 
     private var hexFillColor: Color { Color(hex: "#241D26") ?? .white }
@@ -121,7 +121,7 @@ struct EarthScene: View {
         }
         .preferredColorScheme(.dark)
         .onAppear {
-            vm.configure(pause: pause)     // ✅ ADD
+            vm.configure(pause: pause)
             vm.start()
         }
         .onDisappear { vm.stop() }
@@ -131,5 +131,5 @@ struct EarthScene: View {
 #Preview {
     EarthScene()
         .environmentObject(AppAccessibilitySettings())
-        .environmentObject(PauseController())               // ✅ ADD
+        .environmentObject(PauseController())               
 }

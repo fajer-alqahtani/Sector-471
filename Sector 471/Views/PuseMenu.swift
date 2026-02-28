@@ -28,7 +28,7 @@ struct PuseMenu: View {
     var onContinue: () -> Void
 
     @EnvironmentObject private var accessibility: AppAccessibilitySettings
-    @EnvironmentObject private var pause: PauseController   // ✅ ADD
+    @EnvironmentObject private var pause: PauseController
 
     @StateObject private var stars = StarsPulseViewModel(
         initialOpacity: 0.6,
@@ -57,7 +57,7 @@ struct PuseMenu: View {
 
                 VStack(spacing: 30) {
 
-                    // ✅ Continue must resume pause controller
+                    
                     Button("Continue") {
                         pause.resume()
                         onContinue()
@@ -113,7 +113,7 @@ struct PuseMenu: View {
         }
         .onAppear {
             stars.startPulse()
-            pause.pause() // ✅ keep the game paused while menu is open
+            pause.pause() 
         }
     }
 

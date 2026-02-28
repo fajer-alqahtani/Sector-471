@@ -22,7 +22,7 @@ struct AccessibilityScreen: View {
     // Shared global accessibility settings (font style + voiceOver toggle).
     @EnvironmentObject private var accessibility: AppAccessibilitySettings
 
-    // Optional callback for custom back navigation.
+    
     var onBack: (() -> Void)? = nil
 
     var body: some View {

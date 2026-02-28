@@ -17,110 +17,126 @@
 //  - Buttons use OmbreButtonStyle to match the game UI theme.
 //  - The title ("Sector 417") is centered and shifted upward based on screen height.
 //
-
 import SwiftUI
 
 struct MainMenuUI: View {
 
-    // Global accessibility settings (controls font style: pixel vs dyslexic).
     @EnvironmentObject private var accessibility: AppAccessibilitySettings
-
-    // Base fill color used for the Ombre button style (fallback to white if hex fails).
     private var hexFillColor: Color { Color(hex: "#241D26") ?? .white }
 
+    @State private var path = NavigationPath()
+    @StateObject private var stars = StarsPulseViewModel(
+        initialOpacity: 1.62,
+        minOpacity: 1.55,
+        maxOpacity: 0.70,
+        pulseDuration: 1.6
+    )
+
+    private enum Route: Hashable {
+        case flow
+        case sitting
+        case chapters
+    }
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             GeometryReader { proxy in
-                let h = proxy.size.height // used to position the title vertically
+                let buttonWidth = min(proxy.size.width * 0.90, 530)
 
                 ZStack {
-
-                    // ===== Background stars =====
-                    // Fixed opacity to keep the main menu stars static (no pulsing/twinkle).
+                    
                     StarsBackdrop(
                         size: proxy.size,
-                        starsOpacity: .constant(0.6),
-                        starsOffsetFactor: 0.10,
-                        pulseDuration: 1.5
+                        starsOpacity: $stars.opacity,
+                        starsOffsetFactor: 0.0,          
+                        pulseDuration: stars.pulseDuration
                     )
+                    
+                    
+                    
 
-                    // ===== Main menu buttons =====
+                    
                     VStack(spacing: 30) {
 
-                        // Start the main story flow.
-                        NavigationLink {
-                            EarthSpaceCrashFlow()
-                                .navigationBarBackButtonHidden(true)
-                        } label: {
-                            Text("Start")
-                                .appFixedFont(40, settings: accessibility)
-                                .foregroundStyle(.white)
+                        VStack(spacing: 1) {
+                            Text("Sector")
+                            Text("417")
                         }
-                        .buttonStyle(
-                            OmbreButtonStyle(
-                                baseFill: hexFillColor,
-                                cornerRadius: 8,
-                                contentInsets: EdgeInsets(top: 20, leading: 180, bottom: 20, trailing: 180),
-                                starHeight: 50
-                            )
-                        )
+                        .appFixedFont(85, settings: accessibility)
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .shadow(color: .black.opacity(0.4), radius: 4, x: 0, y: 2)
 
-                        // Open accessibility settings.
-                        NavigationLink {
-                            AccessibilityScreen()
-                                .navigationBarBackButtonHidden(true)
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: "accessibility")
-                                    .font(.system(size: 24))
-                                    .imageScale(.large)
-                                Text("Accessibility")
+                        VStack(spacing: 30) {
+
+                            Button {
+                                path.append(Route.flow)
+                            } label: {
+                                Text("Start")
+                                    .appFixedFont(40, settings: accessibility)
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.85)
+                                    .frame(maxWidth: .infinity, alignment: .center)
                             }
-                            .foregroundStyle(.white)
-                        }
-                        .appFixedFont(40, settings: accessibility)
-                        .buttonStyle(
-                            OmbreButtonStyle(
-                                baseFill: hexFillColor,
-                                cornerRadius: 10,
-                                contentInsets: EdgeInsets(top: 20, leading: 100, bottom: 20, trailing: 100),
-                                starHeight: 50
-                            )
-                        )
+                            .buttonStyle(menuButtonStyle(cornerRadius: 8))
+                            .frame(width: buttonWidth)
 
-                        // Open chapter selection screen.
-                        NavigationLink {
-                            Chapters()
-                                .navigationBarBackButtonHidden(true)
-                        } label: {
-                            Text("Chapters")
-                                .foregroundStyle(.white)
-                        }
-                        .appFixedFont(40, settings: accessibility)
-                        .buttonStyle(
-                            OmbreButtonStyle(
-                                baseFill: hexFillColor,
-                                cornerRadius: 8,
-                                contentInsets: EdgeInsets(top: 20, leading: 150, bottom: 20, trailing: 150),
-                                starHeight: 50
-                            )
-                        )
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            Button {
+                                path.append(Route.sitting)
+                            } label: {
+                                Text("Sitting")
+                                    .appFixedFont(40, settings: accessibility)
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.85)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                            }
+                            .buttonStyle(menuButtonStyle(cornerRadius: 10))
+                            .frame(width: buttonWidth)
 
-                    // ===== Title branding =====
-                    VStack(spacing: -8) {
-                        Text("Sector")
-                        Text("417")
+                            Button {
+                                path.append(Route.chapters)
+                            } label: {
+                                Text("Chapters")
+                                    .appFixedFont(40, settings: accessibility)
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.85)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                            }
+                            .buttonStyle(menuButtonStyle(cornerRadius: 8))
+                            .frame(width: buttonWidth)
+                        }
                     }
-                    .appFixedFont(86, settings: accessibility)
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .shadow(color: .black.opacity(0.4), radius: 4, x: 0, y: 2)
-                    .offset(y: -h * 0.30) // move title upward
+                    .offset(y: -proxy.size.height * 0.05)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
             }
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .flow:
+                    EarthSpaceCrashFlow()
+                        .navigationBarBackButtonHidden(true)
+
+                case .sitting:
+                    Sitting(onBack: { path.removeLast() })
+                        .navigationBarBackButtonHidden(true)
+
+                case .chapters:
+                    Chapters()
+                        .navigationBarBackButtonHidden(true)
+                }
+            }
         }
+    }
+
+    private func menuButtonStyle(cornerRadius: CGFloat) -> OmbreButtonStyle {
+        OmbreButtonStyle(
+            baseFill: hexFillColor,
+            cornerRadius: cornerRadius,
+            contentInsets: EdgeInsets(top: 20, leading: 180, bottom: 20, trailing: 180),
+            starHeight: 60
+        )
     }
 }

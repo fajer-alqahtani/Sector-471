@@ -30,7 +30,7 @@ import SwiftUI
 
 struct EarthSpaceCrashFlow: View {
 
-    @EnvironmentObject private var pause: PauseController        // ✅ ADD
+    @EnvironmentObject private var pause: PauseController
     @StateObject private var vm = FlowViewModel()
 
     var body: some View {
@@ -61,19 +61,19 @@ struct EarthSpaceCrashFlow: View {
             }
 
             Button {
-                vm.pause()                                   // ✅ now pauses time too
+                vm.pause()
             } label: {
                 Image(systemName: "pause.fill")
                     .font(.system(size: 32, weight: .semibold))
                     .foregroundStyle(.white)
-                    .padding(12)
-                    .background(.purple.opacity(0.18))
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .padding(20)
+                    .background(.purple.opacity(0.09))
+                    .clipShape(RoundedRectangle(cornerRadius: 162, style: .continuous))
             }
             .buttonStyle(.plain)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.leading, 1306)
-            .padding(.top, 12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            .padding(.trailing, 26)
+            .padding(.top, 22)
             .zIndex(10_000)
 
             if vm.isPaused {
@@ -84,7 +84,7 @@ struct EarthSpaceCrashFlow: View {
         }
         .allowsHitTesting(true)
         .onAppear {
-            vm.configure(pause: pause)                      // ✅ ADD
+            vm.configure(pause: pause)
             vm.start()
         }
         .onDisappear { vm.stop() }
@@ -94,8 +94,8 @@ struct EarthSpaceCrashFlow: View {
 #Preview {
     NavigationStack {
         EarthSpaceCrashFlow()
-            .environmentObject(PauseController())           // ✅ ADD
-            .environmentObject(AppAccessibilitySettings())   // likely needed in children
-            .environmentObject(ScriptStore.shared)           // UniversalScene needs it
+            .environmentObject(PauseController())
+            .environmentObject(AppAccessibilitySettings())
+            .environmentObject(ScriptStore.shared)           
     }
 }

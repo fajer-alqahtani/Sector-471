@@ -27,7 +27,7 @@ struct OmbreButtonStyle: ButtonStyle {
     let contentInsets: EdgeInsets
     let starHeight: CGFloat
 
-    // ✅ NEW
+    
     var isSelected: Bool = false
     var showsStars: Bool = true
 
@@ -48,7 +48,7 @@ struct OmbreButtonStyle: ButtonStyle {
                         .animation(.easeInOut(duration: 0.22), value: active)
 
                     HStack {
-                        Image("star")          // ✅ FIX: use your real asset name
+                        Image("star")
                             .resizable()
                             .scaledToFit()
                             .frame(height: starHeight)
@@ -76,67 +76,52 @@ struct OmbreButtonStyle: ButtonStyle {
 /// A reusable row component that matches the OmbreButtonStyle look,
 /// but contains an icon + title + Toggle.
 struct OmbreToggleRow: View {
-    
-    // Display title shown next to the icon.
+
     let title: String
-    
-    // Binding to the toggle state (owned by the parent view).
     @Binding var isOn: Bool
-    
-    // Styling inputs (same idea as OmbreButtonStyle).
+
     let baseFill: Color
     let cornerRadius: CGFloat
     let contentInsets: EdgeInsets
     let starHeight: CGFloat
-    
-    // Toggle tint (the "ON" color).
+
     let toggleTint: Color
-    
-    // Optional horizontal offset for the toggle if you want to fine-tune alignment.
     var toggleOffsetX: CGFloat = 0
-    
-    // Accessibility settings for font style.
+
     @ObservedObject var settings: AppAccessibilitySettings
-    
-    // Font size for the row title.
+
     let fontSize: CGFloat
     var showsStars: Bool = true
+
     
-    // Tracks "pressed" state while a touch is down (visual-only).
+    var leadingSystemIcon: String = "voiceover"
+
     @GestureState private var pressed = false
-    
-    /// Second gradient color shown on press (fallback to baseFill if needed).
     private var gradientEnd: Color { Color(hex: "#D0A2DF") ?? baseFill }
-    
+
     var body: some View {
         HStack(spacing: 12) {
-            
-            // VoiceOver icon (for accessibility setting rows).
-            Image(systemName: "voiceover")
+
+            Image(systemName: leadingSystemIcon)
                 .font(.system(size: 28))
                 .foregroundStyle(.white)
-            
-            // Row title uses app’s custom font system.
+
             Text(title)
                 .appFixedFont(fontSize, settings: settings)
                 .foregroundStyle(.white)
-            
-            // Actual Toggle control (labels hidden so title is the label).
+
             Toggle("", isOn: $isOn)
                 .labelsHidden()
                 .tint(toggleTint)
                 .scaleEffect(1.05)
                 .offset(x: toggleOffsetX)
         }
-        .padding(contentInsets)          // row padding
-        .background(background)          // ombre background with press animation
-        .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)) // full-row tap shape
+        .padding(contentInsets)
+        .background(background)
+        .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .simultaneousGesture(
-            // Gesture is only to drive the pressed animation (does not replace Toggle interaction).
             DragGesture(minimumDistance: 0)
-                .updating($pressed) { _, state, _ in
-                    state = true
-                }
+                .updating($pressed) { _, state, _ in state = true }
         )
     }
     

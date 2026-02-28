@@ -47,7 +47,7 @@ final class CrashViewModel: ObservableObject {
 
     private var task: Task<Void, Never>?
 
-    // ✅ Pause dependency
+   
     private var pause: PauseController?
 
     func configure(pause: PauseController) {
@@ -76,7 +76,7 @@ final class CrashViewModel: ObservableObject {
             sceneOpacity = 1.0
         }
 
-        // ✅ pause-aware wait
+        
         await pause.sleep(seconds: whiteRevealDuration + startDelayAfterReveal)
         if Task.isCancelled { return }
 
@@ -86,7 +86,7 @@ final class CrashViewModel: ObservableObject {
     private func runFadeSequenceSmooth() async {
         guard let pause else { return }
 
-        // ✅ pause-aware initial delay
+       
         await pause.sleep(seconds: Double(initialDelayBeforeFadeSequence) / 1_000_000_000.0)
         if Task.isCancelled { return }
 
@@ -114,7 +114,7 @@ final class CrashViewModel: ObservableObject {
                 nextOpacity = 1.0
             }
 
-            // ✅ pause-aware wait
+            
             await pause.sleep(seconds: crossfade)
             if Task.isCancelled { return }
 
@@ -123,7 +123,7 @@ final class CrashViewModel: ObservableObject {
             nextOpacity = 0.0
 
             if settle > 0 {
-                // ✅ pause-aware settle
+                
                 await pause.sleep(seconds: settle)
             }
         }

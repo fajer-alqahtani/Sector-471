@@ -45,7 +45,7 @@ final class EarthSceneViewModel: ObservableObject {
     private var sequenceTask: Task<Void, Never>?
     private var typingToken: Int = 0
 
-    // ✅ Pause dependency
+    
     private var pause: PauseController?
 
     init(scriptStore: ScriptStore = .shared) {
@@ -97,7 +97,7 @@ final class EarthSceneViewModel: ObservableObject {
             bottomOpacity = 1.0
         }
 
-        // ✅ pause-aware hold
+    
         await pause.sleep(seconds: 5.0)
         if Task.isCancelled { return }
 
@@ -105,11 +105,11 @@ final class EarthSceneViewModel: ObservableObject {
             bottomOpacity = 0.0
         }
 
-        // ✅ pause-aware wait
+        
         await pause.sleep(seconds: fadeInOutDuration)
         if Task.isCancelled { return }
 
-        // 2) Top-left text
+        
         withAnimation(.easeInOut(duration: 0.5)) {
             showBottomText = false
             showTopLeftText = true
@@ -126,11 +126,11 @@ final class EarthSceneViewModel: ObservableObject {
         )
         if Task.isCancelled { return }
 
-        // ✅ pause-aware hold
+       
         await pause.sleep(seconds: 4.0)
         if Task.isCancelled { return }
 
-        // 3) Third/bottom text
+       
         withAnimation(.easeInOut(duration: 0.5)) {
             showTopLeftText = false
             showThirdText = true
@@ -154,7 +154,7 @@ final class EarthSceneViewModel: ObservableObject {
             bottomOpacity = 1.0
         }
 
-        // ✅ pause-aware hold
+     
         await pause.sleep(seconds: 5.0)
         if Task.isCancelled { return }
 
@@ -162,7 +162,7 @@ final class EarthSceneViewModel: ObservableObject {
             bottomOpacity = 0.0
         }
 
-        // ✅ pause-aware wait
+      
         await pause.sleep(seconds: fadeInOutDuration)
         if Task.isCancelled { return }
 
@@ -171,7 +171,7 @@ final class EarthSceneViewModel: ObservableObject {
             fadeToBlackOpacity = 1.0
         }
 
-        // ✅ pause-aware wait
+      
         await pause.sleep(seconds: 1.0)
     }
 
@@ -203,7 +203,7 @@ final class EarthSceneViewModel: ObservableObject {
             current.append(ch)
             set(current)
 
-            // ✅ pause-aware typing delay
+           
             await pause.sleep(seconds: typeCharDelaySeconds)
         }
     }

@@ -37,7 +37,7 @@ struct UniversalScene: View {
 
     @EnvironmentObject private var accessibility: AppAccessibilitySettings
     @EnvironmentObject private var scriptStore: ScriptStore
-    @EnvironmentObject private var pause: PauseController          // ✅ ADD
+    @EnvironmentObject private var pause: PauseController
 
     private let assetName: String = "Uni"
 
@@ -129,21 +129,21 @@ struct UniversalScene: View {
                 introBlackOpacity = 0.0
             }
 
-            // ✅ pause-aware wait
+            
             await pause.sleep(seconds: introFadeOutDuration + typeStartDelayAfterIntro)
 
             typedText = ""
             isTypingStarted = true
             await typeQuote()
 
-            // ✅ pause-aware hold
+            
             await pause.sleep(seconds: totalShowSeconds)
 
             withAnimation(.easeInOut(duration: fadeDuration)) {
                 fadeToBlackOpacity = 1.0
             }
 
-            // ✅ pause-aware hold
+            
             await pause.sleep(seconds: blackHoldSeconds)
         }
     }
@@ -153,7 +153,7 @@ struct UniversalScene: View {
             if Task.isCancelled { return }
             await MainActor.run { typedText.append(ch) }
 
-            // ✅ pause-aware typing delay
+            
             await pause.sleep(seconds: typeCharDelaySeconds)
         }
     }
@@ -196,5 +196,5 @@ struct UniversalScene: View {
     UniversalScene()
         .environmentObject(AppAccessibilitySettings())
         .environmentObject(ScriptStore.shared)
-        .environmentObject(PauseController())               // ✅ ADD
+        .environmentObject(PauseController())               
 }

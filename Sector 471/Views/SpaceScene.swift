@@ -233,10 +233,10 @@ struct SpaceScene: View {
 
     @State private var autoPickTask: Task<Void, Never>? = nil
 
-    // ✅ controls whether the choices overlay is visible
+    
     @State private var showChoices: Bool = false
 
-    // ✅ hides overlay 1.5s after selection
+   
     @State private var hideAfterSelectTask: Task<Void, Never>? = nil
 
     var body: some View {
@@ -258,10 +258,7 @@ struct SpaceScene: View {
                             .blendMode(.screen)
                     )
 
-                // ✅ Diamond Choices Overlay:
-                // - appears when warning starts
-                // - stays during selection animation
-                // - disappears 1.5s after selection
+                
                 if showChoices {
                     DiamondChoicesView(selectedChoice: $selectedChoice)
                         .zIndex(1000)
@@ -280,7 +277,7 @@ struct SpaceScene: View {
                 vm.start()
             }
 
-            // ✅ When warning appears: show choices and start auto-pick timer
+           
             .onChange(of: vm.currentWarningName) { _, newValue in
                 autoPickTask?.cancel()
                 autoPickTask = nil
@@ -305,7 +302,7 @@ struct SpaceScene: View {
                 }
             }
 
-            // ✅ When selection happens (user OR auto): hide after 1.5s
+          
             .onChange(of: selectedChoice) { _, newValue in
                 hideAfterSelectTask?.cancel()
                 hideAfterSelectTask = nil
@@ -530,5 +527,5 @@ private struct ShakeWrapper<Content: View>: View {
 #Preview("SpaceScene - Landscape", traits: .landscapeLeft) {
     SpaceScene()
         .environmentObject(AppAccessibilitySettings())
-        .environmentObject(PauseController())   // ✅ add this
+        .environmentObject(PauseController())   
 }

@@ -20,100 +20,88 @@ import SwiftUI
 
 struct Chapters: View {
 
-    // Global accessibility settings (controls app font style).
     @EnvironmentObject private var accessibility: AppAccessibilitySettings
-
-    // Standard dismiss for NavigationStack back.
     @Environment(\.dismiss) private var dismiss
 
-    // Star pulsing state used by StarsBackdrop (opacity changes over time).
     @StateObject private var stars = StarsPulseViewModel(
-        initialOpacity: 0.6,
-        minOpacity: 0.35,
-        maxOpacity: 0.85,
-        pulseDuration: 1.5
+        initialOpacity: 1.62,
+        minOpacity: 1.55,
+        maxOpacity: 0.70,
+        pulseDuration: 1.6
     )
 
-    // Base fill color used for ombre buttons (fallback to white if hex fails).
     private var hexFillColor: Color { Color(hex: "#241D26") ?? .white }
 
     var body: some View {
         GeometryReader { proxy in
-            let h = proxy.size.height // used to position the title
 
-            ZStack {
+            ZStack(alignment: .topLeading) {
 
-                // ===== Background stars =====
-                // StarsBackdrop draws the stars background.
-                // We bind stars.opacity so the background can "pulse".
+                
+                Color.black.ignoresSafeArea()
+
                 StarsBackdrop(
                     size: proxy.size,
                     starsOpacity: $stars.opacity,
-                    starsOffsetFactor: 0.35,
+                    starsOffsetFactor: 0.0,
                     pulseDuration: stars.pulseDuration
                 )
+                .ignoresSafeArea()
 
-                // ===== Chapter buttons =====
+               
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 32, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(20)
+                        .background(.purple.opacity(0.09))
+                        .clipShape(RoundedRectangle(cornerRadius: 162, style: .continuous))
+                }
+                .padding(.leading, 26)
+                .padding(.top, 22)
+                .zIndex(999)
+
+                
                 VStack(spacing: 30) {
 
-                    // Active chapter button (action placeholder for now).
-                    Button("Chapter I: Atmospheric Error") { }
-                        .appFixedFont(40, settings: accessibility)
-                        .foregroundStyle(.white)
-                        .buttonStyle(
-                            OmbreButtonStyle(
-                                baseFill: hexFillColor,
-                                cornerRadius: 8,
-                                contentInsets: EdgeInsets(top: 20, leading: 100, bottom: 20, trailing: 100),
-                                starHeight: 50
+                    VStack(spacing: -8) {
+                        Text("Sector")
+                        Text("417")
+                    }
+                    .appFixedFont(85, settings: accessibility)
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .shadow(color: .black.opacity(0.4), radius: 4, x: 0, y: 2)
+
+                    VStack(spacing: 30) {
+                        Button("Chapter I: Atmospheric Error") { }
+                            .appFixedFont(40, settings: accessibility)
+                            .foregroundStyle(.white)
+                            .buttonStyle(
+                                OmbreButtonStyle(
+                                    baseFill: hexFillColor,
+                                    cornerRadius: 8,
+                                    contentInsets: EdgeInsets(top: 20, leading: 100, bottom: 20, trailing: 100),
+                                    starHeight: 50
+                                )
                             )
-                        )
 
-                    // Locked chapters (show lock icon + title).
-                    lockedChapter(title: "Chapter II", leading: 270, trailing: 270)
-                    lockedChapter(title: "Chapter III", leading: 260, trailing: 270)
+                        lockedChapter(title: "Chapter II", leading: 270, trailing: 270)
+                        lockedChapter(title: "Chapter III", leading: 260, trailing: 270)
+                    }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                // ===== Title branding =====
-                VStack(spacing: -8) {
-                    Text("Sector")
-                    Text("417")
-                }
-                .appFixedFont(85, settings: accessibility)
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-                .shadow(color: .black.opacity(0.4), radius: 4, x: 0, y: 2)
-                .offset(y: -h * 0.30) // moves title upward
+                .offset(y: -proxy.size.height * 0.05)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             }
         }
-
-        // ===== Navigation bar back button =====
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button { dismiss() } label: {
-                    Image(systemName: "chevron.left")
-                        .foregroundStyle(.white)
-                        .font(.system(size: 22, weight: .semibold))
-                }
-            }
-        }
-
-        // Hide the default navigation bar background so the stars show behind it.
+        .ignoresSafeArea()
         .toolbarBackground(.hidden, for: .navigationBar)
-
-        // Start the stars pulse animation when the screen appears.
         .onAppear { stars.startPulse() }
     }
 
-    /// Builds a "locked chapter" button row:
-    /// - Shows a lock icon + chapter title.
-    /// - Uses the same OmbreButtonStyle to match the rest of the UI.
-    /// - Action is currently empty (future: show "locked" message or requirements).
     private func lockedChapter(title: String, leading: CGFloat, trailing: CGFloat) -> some View {
         Button { } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: 20) {
                 Image(systemName: "lock")
                     .font(.system(size: 24))
                     .imageScale(.large)

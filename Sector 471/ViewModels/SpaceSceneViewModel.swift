@@ -37,7 +37,7 @@ final class SpaceSceneViewModel: ObservableObject {
 
     private var sequenceTask: Task<Void, Never>?
 
-    // ✅ Pause dependency
+    
     private var pause: PauseController?
 
     func configure(pause: PauseController) {
@@ -65,17 +65,17 @@ final class SpaceSceneViewModel: ObservableObject {
             earthGrow = true
         }
 
-        // ✅ pause-aware wait
+       
         await pause.sleep(seconds: Double(warningDelayBeforeShow) / 1_000_000_000.0)
         if Task.isCancelled { return }
         currentWarningName = "FullWarning"
 
-        // ✅ pause-aware wait
+       
         await pause.sleep(seconds: Double(warningVisibleDuration) / 1_000_000_000.0)
         if Task.isCancelled { return }
         currentWarningName = nil
 
-        // ✅ pause-aware optional delay
+        
         await pause.sleep(seconds: impactDelayAfterWarningSeconds)
         if Task.isCancelled { return }
 
@@ -86,7 +86,7 @@ final class SpaceSceneViewModel: ObservableObject {
             impactAmount = 1.0
         }
 
-        // ✅ pause-aware wait
+       
         await pause.sleep(seconds: impactRampSeconds)
         if Task.isCancelled { return }
 
@@ -94,7 +94,7 @@ final class SpaceSceneViewModel: ObservableObject {
             whiteOut = 1.0
         }
 
-        // ✅ pause-aware hold
+      
         await pause.sleep(seconds: whiteOutHoldSeconds)
         if Task.isCancelled { return }
 
