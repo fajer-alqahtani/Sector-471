@@ -25,7 +25,7 @@ final class AccessibilityViewModel: ObservableObject {
     let stars: StarsPulseViewModel
 
     // Reference to the shared/global accessibility settings stored in AppAccessibilitySettings.
-    @ObservedObject private var accessibility: AppAccessibilitySettings
+    private var accessibility: AppAccessibilitySettings
 
     // Holds Combine subscriptions to keep them alive for the lifetime of this ViewModel.
     private var cancellables = Set<AnyCancellable>()

@@ -13,6 +13,9 @@ struct ContentView: View {
     }
 }
 
-#Preview ("Landscape Preview", traits: .landscapeLeft){
+#Preview("Landscape Preview", traits: .landscapeLeft) {
     MainMenuUI()
+        .environmentObject(AppAccessibilitySettings())
+        .environmentObject(PauseController())
+        .environmentObject(ScriptStore.shared)
 }

@@ -24,18 +24,16 @@
 //  - Row layout uses Spacer() instead of manual spacing so the trailing icon stays aligned.
 //  - Text is constrained to one line with a minimumScaleFactor to prevent layout jumps.
 //
-
 import SwiftUI
+
+// MARK: - Sitting
 
 struct Sitting: View {
 
-    // Callback used to close this settings menu and return to the previous screen (Pause menu).
     var onBack: () -> Void
 
-    // Global accessibility settings (controls font style: pixel vs dyslexic).
     @EnvironmentObject private var accessibility: AppAccessibilitySettings
 
-    // Star pulsing state used by StarsBackdrop (opacity changes over time).
     @StateObject private var stars = StarsPulseViewModel(
         initialOpacity: 0.6,
         minOpacity: 0.35,
@@ -43,23 +41,21 @@ struct Sitting: View {
         pulseDuration: 1.5
     )
 
-    // Controls whether the Accessibility sub-screen is shown as an overlay.
     @State private var showAccessibility = false
+    @State private var showGamePlay = false
+    @State private var showSupport = false
 
-    // Base fill color used for Ombre buttons (fallback to white if hex fails).
     private var hexFillColor: Color { Color(hex: "#241D26") ?? .white }
 
-    // ✅ Locks menu row size across fonts (Pixel/OpenDyslexic)
     private let rowHeight: CGFloat = 82
     private let rowMaxWidth: CGFloat = 560
 
     var body: some View {
         GeometryReader { proxy in
-            let h = proxy.size.height // used to position the title vertically
+            let h = proxy.size.height
 
             ZStack(alignment: .topLeading) {
 
-                // ===== Background stars =====
                 StarsBackdrop(
                     size: proxy.size,
                     starsOpacity: $stars.opacity,
@@ -67,23 +63,20 @@ struct Sitting: View {
                     pulseDuration: stars.pulseDuration
                 )
 
-                // ===== Back button (closes Sitting overlay) =====
                 Button { onBack() } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.system(size: 32, weight: .semibold))
                         .foregroundStyle(.white)
-                        .padding(12)
-                        .background(.black.opacity(0.25))
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .padding(20)
+                        .background(.purple.opacity(0.09))
+                        .clipShape(RoundedRectangle(cornerRadius: 162, style: .continuous))
                 }
-                .padding(.leading, 16)
-                .padding(.top, 12)
-                .zIndex(999) // keep above menu rows and title
+                .padding(.leading, 26)
+                .padding(.top, 22)
+                .zIndex(999)
 
-                // ===== Settings rows =====
                 VStack(spacing: 30) {
 
-                    // Accessibility row: opens AccessibilityScreen overlay.
                     Button {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             showAccessibility = true
@@ -98,8 +91,11 @@ struct Sitting: View {
                     .frame(maxWidth: rowMaxWidth)
                     .frame(height: rowHeight)
 
-                    // Placeholder rows (future: open real screens).
-                    Button { } label: {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showGamePlay = true
+                        }
+                    } label: {
                         row(title: "GamePlay", icon: "chevron.forward")
                     }
                     .appFixedFont(40, settings: accessibility)
@@ -109,7 +105,12 @@ struct Sitting: View {
                     .frame(maxWidth: rowMaxWidth)
                     .frame(height: rowHeight)
 
-                    Button { } label: {
+                    
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showSupport = true
+                        }
+                    } label: {
                         row(title: "Support & Info", icon: "chevron.forward")
                     }
                     .appFixedFont(40, settings: accessibility)
@@ -129,10 +130,9 @@ struct Sitting: View {
                     .frame(maxWidth: rowMaxWidth)
                     .frame(height: rowHeight)
                 }
-                .padding(.top, 200) // pushes the menu below the title area
+                .padding(.top, 200)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                // ===== Title branding =====
                 VStack(spacing: -8) {
                     Text("Sector")
                     Text("417")
@@ -144,8 +144,6 @@ struct Sitting: View {
                 .offset(y: -h * 0.30)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
-                // ===== Accessibility overlay =====
-                // Presented on top of Sitting when showAccessibility is true.
                 if showAccessibility {
                     AccessibilityScreen(onBack: {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -153,17 +151,35 @@ struct Sitting: View {
                         }
                     })
                     .transition(.opacity)
-                    .zIndex(10_000) // ensure it appears above everything
+                    .zIndex(10_000)
+                }
+
+                if showGamePlay {
+                    GamePlay(onBack: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showGamePlay = false
+                        }
+                    })
+                    .transition(.opacity)
+                    .zIndex(10_000)
+                }
+
+                
+                if showSupport {
+                    SupportView(onBack: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showSupport = false
+                        }
+                    })
+                    .transition(.opacity)
+                    .zIndex(10_000)
                 }
             }
             .ignoresSafeArea()
         }
-        // Start the stars pulse when this screen appears.
         .onAppear { stars.startPulse() }
     }
 
-    /// Builds the row content (text + trailing icon) for each settings item.
-    /// Uses Spacer so the trailing icon is always aligned consistently (no manual spacing needed).
     private func row(title: String, icon: String) -> some View {
         HStack(spacing: 12) {
             Text(title)
@@ -175,7 +191,6 @@ struct Sitting: View {
         .foregroundStyle(.white)
     }
 
-    /// Shared ombre style for all menu rows in this settings screen.
     private var menuRowStyle: OmbreButtonStyle {
         OmbreButtonStyle(
             baseFill: hexFillColor,

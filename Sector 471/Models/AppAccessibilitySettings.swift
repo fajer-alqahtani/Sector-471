@@ -15,7 +15,7 @@
 import SwiftUI
 import Combine
 
-/// Global accessibility settings shared through the app using `.environmentObject(...)`.
+/// Global accessibility settings shared through the app using
 /// Conforms to ObservableObject so SwiftUI can refresh views when values change.
 final class AppAccessibilitySettings: ObservableObject {
 
