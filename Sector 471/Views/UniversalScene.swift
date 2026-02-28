@@ -32,6 +32,43 @@
 
 import SwiftUI
 import AVKit
+import AVFoundation
+
+// MARK: - Tiny Audio Helper (Typing SFX)
+final class TypingSFX {
+    static let shared = TypingSFX()
+    private init() {}
+
+    private var player: AVAudioPlayer?
+
+    /// Load once and reuse so it doesn't lag while typing
+    func prepare(named name: String, ext: String = "m4a", volume: Float = 0.55) {
+        guard let url = Bundle.main.url(forResource: name, withExtension: ext) else {
+            print("❌ Typing sound not found:", "\(name).\(ext)")
+            return
+        }
+
+        do {
+            player = try AVAudioPlayer(contentsOf: url)
+            player?.volume = volume
+            player?.prepareToPlay()
+            print("✅ Typing sound prepared:", url.lastPathComponent)
+        } catch {
+            print("❌ Typing audio error:", error)
+        }
+    }
+
+    func tick() {
+        guard let player else { return }
+        // Restart quickly for rapid ticks
+        player.currentTime = 0
+        player.play()
+    }
+
+    func stop() {
+        player?.stop()
+    }
+}
 
 struct UniversalScene: View {
 
@@ -131,7 +168,10 @@ struct UniversalScene: View {
             // Setup and start looping video.
             setupAndPlayLoop()
 
-            // Reset overlays and typing state when entering the scene.
+            // Prepare typing sound once (no lag)
+            TypingSFX.shared.prepare(named: "Typing_Sound", ext: "m4a", volume: 0.55)
+
+            // Reset overlays and typing state when entering the scene. 
             introBlackOpacity = 1.0
             fadeToBlackOpacity = 0.0
             typedText = ""
@@ -142,6 +182,8 @@ struct UniversalScene: View {
             player?.pause()
             player = nil
             looper = nil
+
+            TypingSFX.shared.stop()
 
             // Reset overlays to a safe default state.
             fadeToBlackOpacity = 0.0
@@ -182,8 +224,23 @@ struct UniversalScene: View {
 
     /// Types the quote text into `typedText` one character at a time.
     private func typeQuote() async {
+        var count = 0
+
         for ch in quoteText {
             await MainActor.run { typedText.append(ch) }
+
+            // Only tick on visible characters (ignore spaces/newlines)
+            if ch != " " && ch != "\n" && ch != "\t" {
+                count += 1
+
+                // Throttle: play every 2 characters (adjust to taste)
+                if count % 2 == 0 {
+                    await MainActor.run {
+                        TypingSFX.shared.tick()
+                    }
+                }
+            }
+
             try? await Task.sleep(nanoseconds: UInt64(typeCharDelaySeconds * 1_000_000_000))
         }
     }
