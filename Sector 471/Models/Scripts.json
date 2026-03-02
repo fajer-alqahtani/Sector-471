@@ -17,7 +17,7 @@
   },
   "shipScreen":{
       "firstText":"CRITICAL FAILURE",
-      "secondText":"SYSTEM FAILURE",
+      "secondText":"SYSTEM FAILURE"
   },
   "ship2":{
       "firstText": "What should i do?",
