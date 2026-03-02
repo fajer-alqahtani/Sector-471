@@ -306,3 +306,8 @@ private struct FirefliesLayer: View {
         return v - floor(v)
     }
 }
+
+#Preview {
+    CrashView()
+        .environmentObject(PauseController())
+}
