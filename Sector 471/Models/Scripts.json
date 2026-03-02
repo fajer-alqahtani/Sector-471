@@ -6,6 +6,26 @@
   "earth": {
     "dialogueText": "Mission log: Entry 417.",
     "topLeftText": "I am entering an orbit around a planet called Earth. A small planet, with loud signals, and chaotic energy.",
-    "thirdText": "humans call this planet home,A curious term"
+    "thirdText": "humans call this planet home,A curious term."
+  },
+  "ship":{
+      "firstText": "I was chosen for this mission because I can observe without attachment, without empathy.",
+      "secondText": "Structural instability detected.",
+      "thirdText": "Navigation systems are failing.",
+      "forthText": "Something had gone wrong.",
+      "fifthText": "The mission could not proceed like this. Protocol was clear. The council have to be notified."
+  },
+  "shipScreen":{
+      "firstText":"CRITICAL FAILURE",
+      "secondText":"SYSTEM FAILURE",
+  },
+  "ship2":{
+      "firstText": "What should i do?",
+      "secondText": "What margin of error will the council accept?",
+      "thirdText": "nothing will survive transmission."
+  },
+  "shipScreenAfterCrash":{
+      "textChoice1":"CRITICAL FAILURE. EMERGENCY EJECTION INITIATED. USER INPUT: APPROVED. ",
+      "textChoice2":"CRITICAL FAILURE. EMERGENCY EJECTION INITIATED. USER INPUT: OVERRIDDEN. ",
   }
 }
