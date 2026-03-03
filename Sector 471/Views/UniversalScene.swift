@@ -148,7 +148,7 @@ struct UniversalScene: View {
             setupAndPlayLoop()
 
             // Prepare typing sound once (no lag)
-            TypingSFX.shared.prepare(named: "Typing_Sound", ext: "m4a", volume: 0.55)
+            TypingSFX.shared.prepare(named: "Typing_Sound", ext: "m4a")
 
             // Reset overlays and typing state when entering the scene. 
             introBlackOpacity = 1.0
@@ -160,8 +160,6 @@ struct UniversalScene: View {
             player?.pause()
             player = nil
             looper = nil
-
-            TypingSFX.shared.stop()
 
             // Reset overlays to a safe default state.
             fadeToBlackOpacity = 0.0
@@ -178,16 +176,19 @@ struct UniversalScene: View {
 
             typedText = ""
             isTypingStarted = true
+            TypingSFX.shared.tick()
+
             await typeQuote()
+            TypingSFX.shared.stop()
 
             
             await pause.sleep(seconds: totalShowSeconds)
-
+            TypingSFX.shared.stop()
             withAnimation(.easeInOut(duration: fadeDuration)) {
                 fadeToBlackOpacity = 1.0
             }
 
-            
+
             await pause.sleep(seconds: blackHoldSeconds)
         }
     }

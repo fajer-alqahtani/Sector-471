@@ -5,68 +5,120 @@
 //  Created by Fajer alQahtani on 27/08/1447 AH.
 //
 
+import Foundation
 import AVFoundation
+import Combine
 
-final class AudioManager {
+final class AudioManager: ObservableObject {
     static let shared = AudioManager()
-    private init() {}
 
-    // For long / main audio (your scene audio)
-    private var player: AVAudioPlayer?
+    private var sfxPlayers: [String: AVAudioPlayer] = [:]
+    private var musicPlayer: AVAudioPlayer?
 
-    // For short rapid SFX (typing)
-    private var typingPlayer: AVAudioPlayer?
+    private init() { }
+    private var controlledPlayers: [String: AVAudioPlayer] = [:]
+    // MARK: - SFX
+    func preloadSFX(_ files: [String]) {
+        files.forEach { _ = makeSFXPlayerIfNeeded(for: $0) }
+    }
 
-    func playAudio(named name: String, ext: String = "m4a", volume: Float = 1.0) {
-        guard let url = Bundle.main.url(forResource: name, withExtension: ext) else {
-            print("❌ Audio file not found:", "\(name).\(ext)")
+    func playSFX(_ fileName: String, ext: String = "wav", volume: Float = 1.0) {
+        guard let player = makeSFXPlayerIfNeeded(for: fileName, ext: ext) else { return }
+        player.currentTime = 0
+        player.volume = volume
+        player.play()
+    }
+
+    private func makeSFXPlayerIfNeeded(for fileName: String, ext: String = "wav") -> AVAudioPlayer? {
+        let key = "\(fileName).\(ext)"
+        if let existing = sfxPlayers[key] { return existing }
+
+        guard let url = Bundle.main.url(forResource: fileName, withExtension: ext) else {
+            print("❌ Missing SFX file: \(key)")
+            return nil
+        }
+
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.prepareToPlay()
+            sfxPlayers[key] = player
+            return player
+        } catch {
+            print("❌ Failed to load SFX \(key): \(error)")
+            return nil
+        }
+    }
+    
+    func playLoopingSFX(_ fileName: String, ext: String = "m4a", volume: Float = 1.0) {
+        guard let url = Bundle.main.url(forResource: fileName, withExtension: ext) else {
+            print("Missing file")
             return
         }
 
         do {
-            player = try AVAudioPlayer(contentsOf: url)
-            player?.volume = volume
-            player?.prepareToPlay()
-            player?.play()
-            print("✅ Playing:", "\(name).\(ext)")
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.numberOfLoops = -1 // infinite loop
+            player.volume = volume
+            player.prepareToPlay()
+            player.play()
+            sfxPlayers["looping"] = player
         } catch {
-            print("❌ Audio error:", error)
+            print(error)
         }
     }
 
-    func stopAudio() {
-        player?.stop()
-        player = nil
+    func stopLoopingSFX() {
+        sfxPlayers["looping"]?.stop()
     }
-
-    // MARK: - Typing SFX
-
-    /// Call ONCE (ex: onAppear) to preload the typing sound
-    func prepareTypingSFX(named name: String, ext: String = "mp3", volume: Float = 0.5) {
+    
+    func startSound(name: String, ext: String = "m4a") {
         guard let url = Bundle.main.url(forResource: name, withExtension: ext) else {
-            print("❌ Typing SFX not found:", "\(name).\(ext)")
+            print("Sound not found: \(name).\(ext)")
             return
         }
 
         do {
-            typingPlayer = try AVAudioPlayer(contentsOf: url)
-            typingPlayer?.volume = volume
-            typingPlayer?.prepareToPlay()
-            print("✅ Typing SFX prepared:", "\(name).\(ext)")
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.numberOfLoops = 0
+            player.prepareToPlay()
+            player.play()
+
+            controlledPlayers[name] = player
         } catch {
-            print("❌ Typing SFX error:", error)
+            print("Error playing \(name):", error)
+        }
+    }
+    
+    func stopSound(name: String) {
+        controlledPlayers[name]?.stop()
+        controlledPlayers[name] = nil
+    }
+
+    // MARK: - Music
+    func playMusic(_ fileName: String, ext: String = "mp3", volume: Float = 0.6, loop: Bool = true) {
+        guard let url = Bundle.main.url(forResource: fileName, withExtension: ext) else {
+            print("❌ Missing music file: \(fileName).\(ext)")
+            return
+        }
+
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.numberOfLoops = loop ? -1 : 0
+            player.volume = volume
+            player.prepareToPlay()
+            player.play()
+            musicPlayer = player
+        } catch {
+            print("❌ Failed to play music: \(error)")
         }
     }
 
-    /// Call during typing (fast replay)
-    func playTypingTick() {
-        guard let typingPlayer else { return }
-        typingPlayer.currentTime = 0
-        typingPlayer.play()
+    func stopMusic() {
+        musicPlayer?.stop()
+        musicPlayer = nil
     }
 
-    func stopTypingSFX() {
-        typingPlayer?.stop()
-        typingPlayer = nil
+    func setMusicVolume(_ v: Float) {
+        musicPlayer?.volume = v
     }
 }
