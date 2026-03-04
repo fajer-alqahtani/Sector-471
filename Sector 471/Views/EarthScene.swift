@@ -9,11 +9,10 @@
 //  It renders the static background images and displays story text in a timed sequence
 //  controlled by EarthSceneViewModel (typewriter + fades + visibility switches).
 //
-//  Text phases (driven by the ViewModel):
-//  1) Bottom dialogue box appears (typed) → fades in → holds → fades out
-//  2) Top-left text appears (typed) → holds
-//  3) Third bottom text appears (typed) → fades in → holds → fades out
-//  4) Scene fades to black (transition to the next scene)
+//  Tap behavior (perma reveal; no skipping scenes):
+//  - On tap, immediately force the currently visible text to its full value and keep it fully shown
+//    (ignore further typing/fades for that block).
+//    Priority: top-left → third (bottom-style) → initial bottom.
 //
 //  Accessibility:
 //  - Fonts respect AppAccessibilitySettings (pixel vs dyslexic).
@@ -27,6 +26,7 @@ struct EarthScene: View {
 
     @EnvironmentObject private var accessibility: AppAccessibilitySettings
     @EnvironmentObject private var pause: PauseController
+    @EnvironmentObject private var scriptStore: ScriptStore
     @StateObject private var vm = EarthSceneViewModel(scriptStore: .shared)
 
     private var hexFillColor: Color { Color(hex: "#241D26") ?? .white }
@@ -40,6 +40,10 @@ struct EarthScene: View {
 
     @State private var thirdMaxWidth: CGFloat = 700
     @State private var thirdPaddingHorizontal: CGFloat = 38
+
+    // Perma-reveal flags
+    @State private var permaTopLeft: Bool = false
+    @State private var permaBottomThird: Bool = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -60,7 +64,8 @@ struct EarthScene: View {
                     .frame(width: 1200)
                     .position(x: w / 2, y: h / 2)
 
-                if vm.showBottomText {
+                // Initial bottom dialogue (render if VM shows it OR we’re perma-keeping bottom/third)
+                if vm.showBottomText || (permaBottomThird && vm.showBottomText) {
                     Text(vm.typedBottomText)
                         .appFixedFont(40, settings: accessibility)
                         .foregroundStyle(.white)
@@ -78,13 +83,14 @@ struct EarthScene: View {
                         )
                         .position(x: w / 2, y: h - 70)
                         .offset(x: dialogueOffsetX, y: dialogueOffsetY)
-                        .opacity(vm.bottomOpacity)
+                        .opacity(permaBottomThird ? 1.0 : vm.bottomOpacity)
                         .allowsHitTesting(false)
                         .accessibilityLabel(vm.typedBottomText)
                         .accessibilityAddTraits(.isStaticText)
                 }
 
-                if vm.showThirdText {
+                // Later bottom-style “third” block (render if VM shows it OR we’re perma-keeping bottom/third)
+                if vm.showThirdText || (permaBottomThird && vm.showThirdText) {
                     Text(vm.typedThirdText)
                         .appFixedFont(40, settings: accessibility)
                         .foregroundStyle(.white)
@@ -93,12 +99,13 @@ struct EarthScene: View {
                         .frame(maxWidth: min(w * 0.92, thirdMaxWidth))
                         .position(x: w / 2, y: h - 70)
                         .offset(x: dialogueOffsetX, y: dialogueOffsetY)
-                        .opacity(vm.bottomOpacity)
+                        .opacity(permaBottomThird ? 1.0 : vm.bottomOpacity)
                         .allowsHitTesting(false)
                         .accessibilityLabel(vm.typedThirdText)
                         .accessibilityAddTraits(.isStaticText)
                 }
 
+                // Top-left text (permaTopLeft keeps it fully revealed while VM shows it)
                 if vm.showTopLeftText {
                     Text(vm.typedTopLeftText)
                         .appFixedFont(topLeftFontSize, settings: accessibility)
@@ -118,6 +125,9 @@ struct EarthScene: View {
                     .opacity(vm.fadeToBlackOpacity)
                     .allowsHitTesting(false)
             }
+            // Full-screen tap to force the visible text to full immediately and keep it shown.
+            .contentShape(Rectangle())
+            .onTapGesture { permaRevealVisible() }
         }
         .preferredColorScheme(.dark)
         .onAppear {
@@ -126,10 +136,38 @@ struct EarthScene: View {
         }
         .onDisappear { vm.stop() }
     }
+
+    // MARK: - Perma reveal helper
+
+    private func permaRevealVisible() {
+        // Priority: top-left → third (bottom-style) → initial bottom.
+        if vm.showTopLeftText {
+            // Align phase to top-left and reveal via VM (cancels typing for that phase).
+            vm.revealCurrentPhaseNow()
+            permaTopLeft = true
+            return
+        }
+
+        if vm.showThirdText {
+            // Align phase to third and reveal via VM.
+            // currentPhase will already be .third when third is visible in the default sequence.
+            vm.revealCurrentPhaseNow()
+            permaBottomThird = true
+            return
+        }
+
+        if vm.showBottomText {
+            // Align phase to bottom and reveal via VM.
+            vm.revealCurrentPhaseNow()
+            permaBottomThird = true
+            return
+        }
+    }
 }
 
 #Preview {
     EarthScene()
         .environmentObject(AppAccessibilitySettings())
-        .environmentObject(PauseController())               
+        .environmentObject(PauseController())
+        .environmentObject(ScriptStore.shared)
 }

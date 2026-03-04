@@ -39,6 +39,9 @@ struct UniversalScene: View {
     @EnvironmentObject private var scriptStore: ScriptStore
     @EnvironmentObject private var pause: PauseController
 
+    // Callback used by the container to advance to the next scene immediately.
+    var onAdvance: () -> Void = {}
+
     private let assetName: String = "Uni"
 
     private let totalShowSeconds: Double = 10.0
@@ -56,6 +59,7 @@ struct UniversalScene: View {
 
     @State private var typedText: String = ""
     @State private var isTypingStarted: Bool = false
+    @State private var isTypingCompleted: Bool = false
     private let typeCharDelaySeconds: Double = 0.10
 
     @State private var player: AVQueuePlayer? = nil
@@ -106,6 +110,11 @@ struct UniversalScene: View {
                     .allowsHitTesting(false)
                     .zIndex(20_000)
             }
+            // Make the entire scene tappable for skip/advance behavior.
+            .contentShape(Rectangle())
+            .onTapGesture {
+                handleTap()
+            }
         }
         .onAppear {
             setupAndPlayLoop()
@@ -114,6 +123,7 @@ struct UniversalScene: View {
             fadeToBlackOpacity = 0.0
             typedText = ""
             isTypingStarted = false
+            isTypingCompleted = false
         }
         .onDisappear {
             player?.pause()
@@ -124,38 +134,66 @@ struct UniversalScene: View {
             introBlackOpacity = 1.0
         }
         .task(id: quoteText) {
+            // Reset typing state for new quote
+            typedText = ""
+            isTypingStarted = false
+            isTypingCompleted = false
 
             withAnimation(.easeInOut(duration: introFadeOutDuration)) {
                 introBlackOpacity = 0.0
             }
 
-            
+            // Wait a moment before starting to type
             await pause.sleep(seconds: introFadeOutDuration + typeStartDelayAfterIntro)
 
-            typedText = ""
-            isTypingStarted = true
-            await typeQuote()
+            // Start typing if not already completed via an early tap
+            if !isTypingCompleted {
+                typedText = ""
+                isTypingStarted = true
+                await typeQuote()
+            }
 
-            
+            // If typing was completed early, typedText is already full; continue the normal hold/black timings.
             await pause.sleep(seconds: totalShowSeconds)
 
             withAnimation(.easeInOut(duration: fadeDuration)) {
                 fadeToBlackOpacity = 1.0
             }
 
-            
             await pause.sleep(seconds: blackHoldSeconds)
         }
+    }
+
+    private func handleTap() {
+        // First tap while typing: reveal instantly
+        if isTypingStarted && !isTypingCompleted {
+            typedText = quoteText
+            isTypingCompleted = true
+            return
+        }
+
+        // If typing hasn't started yet (e.g., during intro fade), also reveal immediately
+        if !isTypingStarted && !isTypingCompleted {
+            typedText = quoteText
+            isTypingStarted = true
+            isTypingCompleted = true
+            return
+        }
+
+        // Typing already complete: advance to the next scene
+        onAdvance()
     }
 
     private func typeQuote() async {
         for ch in quoteText {
             if Task.isCancelled { return }
+            if isTypingCompleted { return } // stop typing if user revealed early
             await MainActor.run { typedText.append(ch) }
 
-            
             await pause.sleep(seconds: typeCharDelaySeconds)
         }
+        // Finished normally
+        isTypingCompleted = true
     }
 
     private func setupAndPlayLoop() {
@@ -196,5 +234,6 @@ struct UniversalScene: View {
     UniversalScene()
         .environmentObject(AppAccessibilitySettings())
         .environmentObject(ScriptStore.shared)
-        .environmentObject(PauseController())               
+        .environmentObject(PauseController())
 }
+

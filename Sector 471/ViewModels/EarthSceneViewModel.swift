@@ -18,12 +18,13 @@
 //  It uses a single sequence Task so it can be started once and cancelled safely.
 //  It also uses a "typingToken" to cancel/ignore old typing tasks when the sequence changes
 //  or when stop() is called (prevents text continuing to type after cancellation).
-//
 import SwiftUI
 import Combine
 
 @MainActor
 final class EarthSceneViewModel: ObservableObject {
+
+    enum Phase { case bottom, topLeft, third, finished }
 
     @Published var typedBottomText: String = ""
     @Published var typedTopLeftText: String = ""
@@ -37,16 +38,18 @@ final class EarthSceneViewModel: ObservableObject {
 
     @Published var fadeToBlackOpacity: Double = 0.0
 
+    @Published private(set) var currentPhase: Phase = .bottom
+    @Published private(set) var isTypingCompleted: Bool = false
+    
     let typeCharDelaySeconds: Double = 0.09
     let fadeInOutDuration: Double = 1.2
 
-    private let scriptStore: ScriptStore
 
+    private let scriptStore: ScriptStore
     private var sequenceTask: Task<Void, Never>?
     private var typingToken: Int = 0
-
-    
     private var pause: PauseController?
+
 
     init(scriptStore: ScriptStore = .shared) {
         self.scriptStore = scriptStore
@@ -70,11 +73,48 @@ final class EarthSceneViewModel: ObservableObject {
         typingToken &+= 1
     }
 
+
+    func revealCurrentPhaseNow() {
+
+        typingToken &+= 1
+        isTypingCompleted = true
+
+        switch currentPhase {
+
+        case .bottom:
+            typedBottomText = scriptStore.scripts.earth.dialogueText
+            showBottomText = true
+
+            withAnimation(.easeInOut(duration: 0.2)) {
+                bottomOpacity = 1.0
+            }
+
+        case .topLeft:
+            typedTopLeftText = scriptStore.scripts.earth.topLeftText
+            showTopLeftText = true
+
+        case .third:
+            typedThirdText = scriptStore.scripts.earth.thirdText
+            showThirdText = true
+
+            withAnimation(.easeInOut(duration: 0.2)) {
+                bottomOpacity = 1.0
+            }
+
+        case .finished:
+            break
+        }
+    }
+
+
     private func runSequence() async {
+
         reset()
         guard let pause else { return }
 
-        // 1) Bottom dialogue
+        currentPhase = .bottom
+        isTypingCompleted = false
+
         typingToken &+= 1
         let token1 = typingToken
 
@@ -90,6 +130,7 @@ final class EarthSceneViewModel: ObservableObject {
                 into: { self.typedBottomText = $0 },
                 token: token1
             )
+            await MainActor.run { self.isTypingCompleted = true }
         }
 
         bottomOpacity = 0.0
@@ -97,7 +138,6 @@ final class EarthSceneViewModel: ObservableObject {
             bottomOpacity = 1.0
         }
 
-    
         await pause.sleep(seconds: 5.0)
         if Task.isCancelled { return }
 
@@ -105,18 +145,20 @@ final class EarthSceneViewModel: ObservableObject {
             bottomOpacity = 0.0
         }
 
-        
         await pause.sleep(seconds: fadeInOutDuration)
         if Task.isCancelled { return }
 
-        
         withAnimation(.easeInOut(duration: 0.5)) {
             showBottomText = false
             showTopLeftText = true
         }
 
+        currentPhase = .topLeft
+        isTypingCompleted = false
+
         typingToken &+= 1
         let token2 = typingToken
+
         typedTopLeftText = ""
 
         await typeText(
@@ -124,20 +166,24 @@ final class EarthSceneViewModel: ObservableObject {
             into: { self.typedTopLeftText = $0 },
             token: token2
         )
-        if Task.isCancelled { return }
 
-       
+        if Task.isCancelled { return }
+        isTypingCompleted = true
+
         await pause.sleep(seconds: 4.0)
         if Task.isCancelled { return }
 
-       
         withAnimation(.easeInOut(duration: 0.5)) {
             showTopLeftText = false
             showThirdText = true
         }
+        
+        currentPhase = .third
+        isTypingCompleted = false
 
         typingToken &+= 1
         let token3 = typingToken
+
         typedThirdText = ""
 
         Task { [weak self] in
@@ -147,6 +193,7 @@ final class EarthSceneViewModel: ObservableObject {
                 into: { self.typedThirdText = $0 },
                 token: token3
             )
+            await MainActor.run { self.isTypingCompleted = true }
         }
 
         bottomOpacity = 0.0
@@ -154,7 +201,6 @@ final class EarthSceneViewModel: ObservableObject {
             bottomOpacity = 1.0
         }
 
-     
         await pause.sleep(seconds: 5.0)
         if Task.isCancelled { return }
 
@@ -162,16 +208,16 @@ final class EarthSceneViewModel: ObservableObject {
             bottomOpacity = 0.0
         }
 
-      
         await pause.sleep(seconds: fadeInOutDuration)
         if Task.isCancelled { return }
 
-        // 4) Fade to black
+
+        currentPhase = .finished
+
         withAnimation(.easeInOut(duration: 1.0)) {
             fadeToBlackOpacity = 1.0
         }
 
-      
         await pause.sleep(seconds: 1.0)
     }
 
@@ -186,6 +232,9 @@ final class EarthSceneViewModel: ObservableObject {
         showThirdText = false
 
         fadeToBlackOpacity = 0.0
+
+        currentPhase = .bottom
+        isTypingCompleted = false
     }
 
     private func typeText(
@@ -193,17 +242,19 @@ final class EarthSceneViewModel: ObservableObject {
         into set: @escaping (String) -> Void,
         token: Int
     ) async {
+
         guard let pause else { return }
 
         var current = ""
+
         for ch in full {
+
             if Task.isCancelled { return }
             if token != typingToken { return }
 
             current.append(ch)
             set(current)
 
-           
             await pause.sleep(seconds: typeCharDelaySeconds)
         }
     }
