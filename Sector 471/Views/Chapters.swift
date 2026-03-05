@@ -102,7 +102,7 @@ struct Chapters: View {
     private func lockedChapter(title: String, leading: CGFloat, trailing: CGFloat) -> some View {
         Button { } label: {
             HStack(spacing: 20) {
-                Image(systemName: "lock")
+                Image(systemName: "hourglass")
                     .font(.system(size: 24))
                     .imageScale(.large)
 
