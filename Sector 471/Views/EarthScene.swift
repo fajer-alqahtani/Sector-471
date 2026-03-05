@@ -21,6 +21,8 @@
 //
 
 import SwiftUI
+import AVKit
+import AVFoundation
 
 struct EarthScene: View {
 
@@ -133,6 +135,9 @@ struct EarthScene: View {
         .onAppear {
             vm.configure(pause: pause)
             vm.start()
+            AudioManager.shared.playLoopingSFX("Space_Sound", ext: "wav", volume: 9.0)
+
+
         }
         .onDisappear { vm.stop() }
     }

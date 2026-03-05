@@ -32,6 +32,43 @@
 
 import SwiftUI
 import AVKit
+import AVFoundation
+
+// MARK: - Tiny Audio Helper (Typing SFX)
+final class TypingSFX {
+    static let shared = TypingSFX()
+    private init() {}
+
+    private var player: AVAudioPlayer?
+
+    /// Load once and reuse so it doesn't lag while typing
+    func prepare(named name: String, ext: String = "m4a", volume: Float = 0.55) {
+        guard let url = Bundle.main.url(forResource: name, withExtension: ext) else {
+            print("❌ Typing sound not found:", "\(name).\(ext)")
+            return
+        }
+
+        do {
+            player = try AVAudioPlayer(contentsOf: url)
+            player?.volume = volume
+            player?.prepareToPlay()
+            print("✅ Typing sound prepared:", url.lastPathComponent)
+        } catch {
+            print("❌ Typing audio error:", error)
+        }
+    }
+
+    func tick() {
+        guard let player else { return }
+        // Restart quickly for rapid ticks
+        player.currentTime = 0
+        player.play()
+    }
+
+    func stop() {
+        player?.stop()
+    }
+}
 
 struct UniversalScene: View {
 
@@ -119,6 +156,10 @@ struct UniversalScene: View {
         .onAppear {
             setupAndPlayLoop()
 
+            // Prepare typing sound once (no lag)
+            TypingSFX.shared.prepare(named: "Typing_Sound", ext: "m4a")
+
+            // Reset overlays and typing state when entering the scene. 
             introBlackOpacity = 1.0
             fadeToBlackOpacity = 0.0
             typedText = ""
@@ -130,6 +171,7 @@ struct UniversalScene: View {
             player = nil
             looper = nil
 
+            // Reset overlays to a safe default state.
             fadeToBlackOpacity = 0.0
             introBlackOpacity = 1.0
         }
@@ -146,19 +188,20 @@ struct UniversalScene: View {
             // Wait a moment before starting to type
             await pause.sleep(seconds: introFadeOutDuration + typeStartDelayAfterIntro)
 
-            // Start typing if not already completed via an early tap
-            if !isTypingCompleted {
-                typedText = ""
-                isTypingStarted = true
-                await typeQuote()
-            }
+            typedText = ""
+            isTypingStarted = true
+            TypingSFX.shared.tick()
+
+            await typeQuote()
+            TypingSFX.shared.stop()
 
             // If typing was completed early, typedText is already full; continue the normal hold/black timings.
             await pause.sleep(seconds: totalShowSeconds)
-
+            TypingSFX.shared.stop()
             withAnimation(.easeInOut(duration: fadeDuration)) {
                 fadeToBlackOpacity = 1.0
             }
+
 
             await pause.sleep(seconds: blackHoldSeconds)
         }
@@ -185,6 +228,8 @@ struct UniversalScene: View {
     }
 
     private func typeQuote() async {
+        var count = 0
+
         for ch in quoteText {
             if Task.isCancelled { return }
             if isTypingCompleted { return } // stop typing if user revealed early
