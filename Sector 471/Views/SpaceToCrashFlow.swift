@@ -11,20 +11,6 @@
 //  - Crossfading between scenes using per-scene opacity values from FlowViewModel
 //  - Providing a pause button overlay that can open the pause menu (PuseMenu)
 //
-//  How scene switching works:
-//  - FlowViewModel owns `step` and the opacity values for each scene.
-//  - Each scene is conditionally rendered when it is the current step OR when its opacity
-//    is still above a small threshold (so fade-out can complete smoothly).
-//  - SpaceScene receives a callback (onFinish) which triggers vm.startCrashTransition()
-//    to move from Space → Crash when the space timeline ends.
-//
-//  Pause behavior:
-//  - Tapping the pause button sets vm.isPaused = true.
-//  - When paused, PuseMenu is shown as a full overlay.
-//  - Continue calls vm.resume() to hide the pause menu.
-//  NOTE: In this file, pausing currently controls UI visibility only.
-//  It does NOT stop the FlowViewModel’s internal timing task unless the scenes handle it separately.
-//
 
 import SwiftUI
 
@@ -37,13 +23,13 @@ struct EarthSpaceCrashFlow: View {
         ZStack {
 
             if vm.step == .universal || vm.universalOpacity > 0.001 {
-                UniversalScene()
+                UniversalScene(onAdvance: advanceFromUniversalNow)
                     .opacity(vm.universalOpacity)
                     .zIndex(0)
             }
 
             if vm.step == .earth || vm.earthOpacity > 0.001 {
-                EarthScene()
+                EarthScene() // no onAdvance parameter after revert
                     .opacity(vm.earthOpacity)
                     .zIndex(1)
             }
@@ -89,6 +75,24 @@ struct EarthSpaceCrashFlow: View {
         }
         .onDisappear { vm.stop() }
     }
+
+    private func advanceFromUniversalNow() {
+        vm.stop()
+        vm.step = .earth
+        withAnimation(.easeInOut(duration: vm.fadeDuration)) {
+            vm.universalOpacity = 0.0
+            vm.earthOpacity = 1.0
+        }
+    }
+
+    private func advanceFromEarthNow() {
+        vm.stop()
+        vm.step = .space
+        withAnimation(.easeInOut(duration: vm.fadeDuration)) {
+            vm.earthOpacity = 0.0
+            vm.spaceOpacity = 1.0
+        }
+    }
 }
 
 #Preview {
@@ -96,6 +100,6 @@ struct EarthSpaceCrashFlow: View {
         EarthSpaceCrashFlow()
             .environmentObject(PauseController())
             .environmentObject(AppAccessibilitySettings())
-            .environmentObject(ScriptStore.shared)           
+            .environmentObject(ScriptStore.shared)
     }
 }
