@@ -49,26 +49,61 @@ final class AudioManager: ObservableObject {
         }
     }
     
-    func playLoopingSFX(_ fileName: String, ext: String = "m4a", volume: Float = 1.0) {
+    private var sessionConfigured = false
+
+    private func configureSessionIfNeeded() {
+        guard !sessionConfigured else { return }
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .default, options: [])
+            try session.setActive(true)
+            sessionConfigured = true
+            print("✅ Audio session configured")
+        } catch {
+            print("❌ Audio session error:", error)
+        }
+    }
+    
+    // MARK: - Ambience (Looping SFX)
+
+    func playLoopingSFX(_ fileName: String, ext: String = "wav", volume: Float = 1.0) {
+        configureSessionIfNeeded()
+        let key = "\(fileName).\(ext)"
+
+        // ✅ If already playing, don't restart
+        if let existing = sfxPlayers[key], existing.isPlaying {
+            existing.volume = volume
+            return
+        }
+
         guard let url = Bundle.main.url(forResource: fileName, withExtension: ext) else {
-            print("Missing file")
+            print("❌ Missing file:", key)
             return
         }
 
         do {
+            // ✅ Ensure audio plays even if device is on silent
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .default, options: [])
+            try session.setActive(true)
+
             let player = try AVAudioPlayer(contentsOf: url)
-            player.numberOfLoops = -1 // infinite loop
+            player.numberOfLoops = -1
             player.volume = volume
             player.prepareToPlay()
-            player.play()
-            sfxPlayers["looping"] = player
+
+            sfxPlayers[key] = player
+            let ok = player.play()
+            print("✅ Looping started \(key):", ok)
         } catch {
-            print(error)
+            print("❌ Looping error \(key):", error)
         }
     }
 
-    func stopLoopingSFX() {
-        sfxPlayers["looping"]?.stop()
+    func stopLoopingSFX(_ fileName: String, ext: String = "wav") {
+        let key = "\(fileName).\(ext)"
+        sfxPlayers[key]?.stop()
+        sfxPlayers[key] = nil
     }
     
     func startSound(name: String, ext: String = "m4a") {
